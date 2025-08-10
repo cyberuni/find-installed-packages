@@ -4550,12 +4550,12 @@ jest-watch-suspend@1.1.2:
     chalk "^2.4.2"
     unpartial "^0.6.1"
 
-jest-watch-toggle-config@2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/jest-watch-toggle-config/-/jest-watch-toggle-config-2.0.1.tgz#5e928100c8cf427a2092143556e6862a92886fac"
-  integrity sha512-qOOPo8vPlDX/hfHCQbJT5NKUvR+Uah+rsCtt+cCmg8oiMNtUvWUO2sqYW/X5PXmWyaoxwI14D8lVEmFy3w6BwQ==
+jest-watch-toggle-config@3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/jest-watch-toggle-config/-/jest-watch-toggle-config-3.0.0.tgz#9c285df258782e050a29c413438963cf7d271266"
+  integrity sha512-7gXl1roZ2ctq24X1cNJsSJ3vX2TktPHsK9QKN+p+WeyTAwwiifjxMP8jiO0zhpnOlycvLn+6LWboi38/FBLVzg==
   dependencies:
-    chalk "^4.1.0"
+    chalk "^5.2.0"
 
 jest-watch-typeahead@2.2.2:
   version "2.2.2"
