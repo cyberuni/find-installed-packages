@@ -1,42 +1,39 @@
 {
-  "name": "find-installed-packages-monorepo",
-  "private": true,
-  "workspaces": [
-    "packages/*",
-    "testcases/*"
-  ],
-  "scripts": {
-    "build": "bun run --filter './packages/*' build",
-    "clean": "bun run --filter './packages/*' clean",
-    "coverage": "bun run --filter './packages/*' coverage",
-    "knip": "knip",
-    "lint": "eslint --ext=js,ts .",
-    "postinstall": "husky install",
-    "test": "bun run --filter './packages/*' test",
-    "verify": "npm-run-all clean -p knip build lint coverage",
-    "watch": "bun run --filter './packages/*' watch"
-  },
-  "devDependencies": {
-    "@commitlint/cli": "17.8.1",
-    "@commitlint/config-conventional": "17.8.1",
-    "@semantic-release/changelog": "6.0.3",
-    "@semantic-release/git": "10.0.1",
-    "@semantic-release/github": "8.1.0",
-    "@semantic-release/npm": "9.0.2",
-    "@typescript-eslint/eslint-plugin": "5.62.0",
-    "@typescript-eslint/parser": "5.62.0",
-    "eslint": "8.56.0",
-    "eslint-config-prettier": "9.1.0",
-    "eslint-plugin-harmony": "7.1.2",
-    "husky": "8.0.3",
-    "knip": "latest",
-    "npm-run-all2": "latest",
-    "rimraf": "3.0.2",
-    "semantic-release": "19.0.5",
-    "typescript": "5.1.6"
-  },
-  "engines": {
-    "node": ">=14",
-    "bun": ">=1.0"
-  }
+	"name": "find-installed-packages-monorepo",
+	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"build": "bun run --filter './packages/*' build",
+		"clean": "bun run --filter './packages/*' clean",
+		"coverage": "bun run --filter './packages/*' coverage",
+		"knip": "knip",
+		"check": "biome check",
+		"check:fix": "biome check --write",
+		"postinstall": "husky install",
+		"test": "bun run --filter './packages/*' test",
+		"verify": "npm-run-all clean -p knip build check coverage",
+		"watch": "bun run --filter './packages/*' watch"
+	},
+	"devDependencies": {
+		"@commitlint/cli": "17.8.1",
+		"@commitlint/config-conventional": "17.8.1",
+		"@semantic-release/changelog": "6.0.3",
+		"@semantic-release/git": "10.0.1",
+		"@semantic-release/github": "8.1.0",
+		"@semantic-release/npm": "9.0.2",
+		"@biomejs/biome": "2.4.14",
+		"@repobuddy/biome": "2.3.1",
+		"husky": "8.0.3",
+		"knip": "latest",
+		"npm-run-all2": "latest",
+		"rimraf": "3.0.2",
+		"semantic-release": "19.0.5",
+		"typescript": "5.1.6"
+	},
+	"engines": {
+		"node": ">=14",
+		"bun": ">=1.0"
+	}
 }

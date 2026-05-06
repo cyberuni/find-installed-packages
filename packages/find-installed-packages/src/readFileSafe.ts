@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'node:fs'
 
 /**
  * Read file and ignore ENOENT.
@@ -7,14 +7,12 @@ import fs from 'fs'
  * @param path file path.
  */
 export function readFileSafe(path: string) {
-  try {
-    return fs.readFileSync(path, 'utf8')
-  }
-  catch (err: any) {
-    // istanbul ignore next
-    if (err.code === 'ENOENT')
-      return undefined
-    // istanbul ignore next
-    throw err
-  }
+	try {
+		return fs.readFileSync(path, 'utf8')
+	} catch (err: any) {
+		// istanbul ignore next
+		if (err.code === 'ENOENT') return undefined
+		// istanbul ignore next
+		throw err
+	}
 }

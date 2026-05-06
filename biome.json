@@ -1,0 +1,14 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
+	"extends": ["@repobuddy/biome"],
+	"files": {
+		"includes": ["!**/dist"]
+	},
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noConsole": "off"
+			}
+		}
+	}
+}
