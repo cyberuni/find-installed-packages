@@ -15,29 +15,31 @@
     "name": "Homa Wong (unional)",
     "email": "homawong@gmail.com"
   },
-  "main": "lib/index.js",
-  "module": "libm/index.js",
-  "jsnext:main": "libm/index.js",
-  "typings": "libm/index.d.ts",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/index.d.mts", "default": "./dist/index.mjs" },
+      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
+    }
+  },
   "files": [
-    "lib",
-    "libm"
+    "dist"
   ],
   "scripts": {
-    "build": "run-p build:cjs build:esm",
-    "build:cjs": "tsc -p tsconfig.lib.json",
-    "build:esm": "tsc -p tsconfig.libm.json",
-    "clean": "rimraf lib libm",
+    "build": "tsdown",
+    "clean": "rimraf dist",
     "codacy": "cat coverage/lcov.info | codacy-coverage",
-    "coverage": "jest --coverage",
-    "depcheck": "depcheck",
+    "coverage": "bun test --coverage",
+    "knip": "knip",
     "lint": "eslint --ext=js,ts .",
     "postinstall": "husky install",
     "prepack": "pinst --disable",
     "postpack": "pinst --enable",
-    "test": "jest",
-    "verify": "npm-run-all clean -p build depcheck lint coverage",
-    "watch": "jest --watch"
+    "test": "bun test",
+    "verify": "npm-run-all clean -p build knip lint coverage",
+    "watch": "bun test --watch"
   },
   "husky": {
     "hooks": {
@@ -55,28 +57,25 @@
     "@semantic-release/git": "10.0.1",
     "@semantic-release/github": "8.1.0",
     "@semantic-release/npm": "9.0.2",
-    "@types/jest": "29.5.11",
     "@types/temp": "0.9.4",
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
     "assertron": "11.5.0",
-    "depcheck": "1.4.7",
+    "bun-types": "latest",
     "eslint": "8.56.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-harmony": "7.1.2",
     "husky": "8.0.3",
-    "jest": "29.7.0",
-    "jest-watch-suspend": "1.1.2",
-    "jest-watch-toggle-config": "2.0.1",
-    "jest-watch-typeahead": "2.2.2",
-    "npm-run-all": "4.1.5",
+    "knip": "latest",
+    "npm-run-all2": "latest",
     "pinst": "3.0.0",
     "rimraf": "3.0.2",
     "semantic-release": "19.0.5",
-    "ts-jest": "29.1.0",
+    "tsdown": "latest",
     "typescript": "5.1.6"
   },
   "engines": {
-    "node": ">=14"
+    "node": ">=14",
+    "bun": ">=1.0"
   }
 }

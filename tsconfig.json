@@ -1,7 +1,8 @@
 {
-  "extends": "./tsconfig.libm.json",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
+    "types": ["bun-types"]
   },
   "include": [
     "src",

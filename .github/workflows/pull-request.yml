@@ -4,5 +4,13 @@ on:
     types: [opened, synchronize]
 
 jobs:
-  code:
-    uses: unional/.github/.github/workflows/yarn-verify-cross-platform.yml@main
+  verify:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run verify

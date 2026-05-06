@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { getCacheFilepath } from './getCacheFilepath'
 
-export type Cache = Record<string, string[]>
+type Cache = Record<string, string[]>
 
 export function getCacheKey(keywords: string[], cwd: string): string {
   return JSON.stringify({ cwd: path.resolve(cwd), keywords: keywords.sort() })

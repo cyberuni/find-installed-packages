@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-export type PackageInfo = { name: string, ctimeMs: number, path: string }
+
+type PackageInfo = { name: string, ctimeMs: number, path: string }
 
 export function findPackagesInfo(cwd: string): PackageInfo[] {
   if (!fs.existsSync(cwd)) return []

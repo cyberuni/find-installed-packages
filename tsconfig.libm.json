@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "declaration": true,
-    "module": "ES2020",
-    "outDir": "libm",
-    "target": "ES2019"
-  }
-}

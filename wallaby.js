@@ -40,6 +40,6 @@ module.exports = () => {
       }
       fs.patched = true;
     },
-    'testFramework': 'jest'
+    'testFramework': 'bun'
   }
 }
