@@ -2,10 +2,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { getCacheFilepath } from './getCacheFilepath'
 
-type Cache = Record<string, string[]>
+type CacheEntry = { ctimeMs: number; packages: string[] }
+type Cache = Record<string, CacheEntry>
+
+let memoryCache: Cache | undefined
 
 export function getCacheKey(keywords: string[], cwd: string): string {
-	return JSON.stringify({ cwd: path.resolve(cwd), keywords: keywords.sort() })
+	return JSON.stringify({ cwd: path.resolve(cwd), keywords: [...keywords].sort() })
 }
 
 export function getCachedPackages(key: string, lastCtimeMs: number): string[] | undefined {
@@ -32,23 +35,31 @@ export function setCachedPackages(key: string, ctimeMs: number, packages: string
 
 // istanbul ignore next
 export function clearCache() {
+	memoryCache = undefined
 	const filepath = getCacheFilepath()
 	if (fs.existsSync(filepath)) fs.unlinkSync(filepath)
 }
 
 // istanbul ignore next
-function loadCache() {
+function loadCache(): Cache {
+	if (memoryCache) return memoryCache
 	const filepath = getCacheFilepath()
-	if (!fs.existsSync(filepath)) return {}
+	if (!fs.existsSync(filepath)) {
+		memoryCache = {}
+		return memoryCache
+	}
 	try {
-		return JSON.parse(fs.readFileSync(filepath, { encoding: 'utf-8' }))
+		memoryCache = JSON.parse(fs.readFileSync(filepath, { encoding: 'utf-8' }))
+		return memoryCache!
 	} catch (_e) {
-		return {}
+		memoryCache = {}
+		return memoryCache
 	}
 }
 
 // istanbul ignore next
 function saveCache(cache: Cache) {
+	memoryCache = cache
 	const filepath = getCacheFilepath()
 	fs.writeFileSync(filepath, JSON.stringify(cache))
 }
