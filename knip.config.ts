@@ -1,7 +1,6 @@
 import type { KnipConfig } from 'knip'
 
 const config: KnipConfig = {
-	ignore: ['wallaby.js'],
 	ignoreDependencies: [
 		'@semantic-release/github', // referenced in .releaserc.json
 		'@semantic-release/npm', // referenced in .releaserc.json

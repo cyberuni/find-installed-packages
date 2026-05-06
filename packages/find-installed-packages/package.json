@@ -38,7 +38,6 @@
 		"clean": "rimraf dist",
 		"codacy": "cat coverage/lcov.info | codacy-coverage",
 		"coverage": "bun test --coverage",
-		"lint": "eslint --ext=js,ts .",
 		"test": "bun test",
 		"verify": "npm-run-all clean -p build lint coverage",
 		"watch": "bun test --watch"
