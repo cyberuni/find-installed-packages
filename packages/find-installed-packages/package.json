@@ -1,0 +1,54 @@
+{
+  "name": "find-installed-packages",
+  "version": "0.0.0-development",
+  "description": "Find installed packages",
+  "homepage": "https://github.com/unional/find-installed-packages",
+  "bugs": {
+    "url": "https://github.com/unional/find-installed-packages/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unional/find-installed-packages.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Homa Wong (unional)",
+    "email": "homawong@gmail.com"
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/index.d.mts", "default": "./dist/index.mjs" },
+      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "clean": "rimraf dist",
+    "codacy": "cat coverage/lcov.info | codacy-coverage",
+    "coverage": "bun test --coverage",
+    "lint": "eslint --ext=js,ts .",
+    "test": "bun test",
+    "verify": "npm-run-all clean -p build lint coverage",
+    "watch": "bun test --watch"
+  },
+  "dependencies": {
+    "temp": "^0.9.4",
+    "unpartial": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/temp": "0.9.4",
+    "assertron": "11.5.0",
+    "bun-types": "latest",
+    "tsdown": "latest"
+  },
+  "engines": {
+    "node": ">=14",
+    "bun": ">=1.0"
+  }
+}

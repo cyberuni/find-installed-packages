@@ -1,16 +1,16 @@
 module.exports = () => {
   return {
     'files': [
-      { pattern: 'fixtures/**/*', instrument: false },
+      { pattern: 'testcases/**/*', instrument: false },
       { pattern: 'scripts/*', instrument: false },
       { pattern: 'package.json', instrument: false },
       { pattern: 'tsconfig.*', instrument: false },
       { pattern: '__komondor__/**/*', instrument: false },
-      'src/**/*.ts',
-      '!src/**/*.spec.ts'
+      'packages/*/src/**/*.ts',
+      '!packages/*/src/**/*.spec.ts'
     ],
     'tests': [
-      'src/**/*.spec.ts'
+      'packages/*/src/**/*.spec.ts'
     ],
     'env': {
       'type': 'node'

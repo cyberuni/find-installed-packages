@@ -15,8 +15,5 @@
   },
   "include": [
     "typings"
-  ],
-  "files": [
-    "src/index.ts"
   ]
 }
