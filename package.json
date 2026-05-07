@@ -14,6 +14,7 @@
 		"check:fix": "biome check --write",
 		"postinstall": "husky install",
 		"release": "changeset publish",
+		"version": "changeset version",
 		"test": "bun run --filter './packages/*' test",
 		"verify": "npm-run-all clean -p knip build check coverage",
 		"watch": "bun run --filter './packages/*' watch"
