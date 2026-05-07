@@ -1,3 +1,10 @@
+# [3.1.0](https://github.com/unional/find-installed-packages/compare/v3.0.4...v3.1.0) (2026-05-07)
+
+
+### Features
+
+* add source field to exports and update files configuration ([e18253c](https://github.com/unional/find-installed-packages/commit/e18253c14b59717d75ee3ae43904e89fe9be5f14))
+
 ## [3.0.4](https://github.com/unional/find-installed-packages/compare/v3.0.3...v3.0.4) (2026-05-07)
 
 
