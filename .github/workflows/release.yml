@@ -2,37 +2,14 @@ name: release
 on:
   push:
     branches: [main]
-permissions:
-  id-token: write
-  contents: write
-  pull-requests: write
 
 jobs:
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bun run verify
+  code:
+    uses: unional/.github/.github/workflows/bun-verify.yml@main
+    with:
+      os: '["ubuntu-latest"]'
 
   release:
-    runs-on: ubuntu-latest
-    needs: verify
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.CI_GITHUB_TOKEN }}
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bun run build
-      - name: Create Release Pull Request or Publish
-        uses: changesets/action@v1
-        with:
-          publish: bun run release
-          title: "chore: release packages"
-          commit: "chore: release packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
-          NPM_TOKEN: ''
+    uses: unional/.github/.github/workflows/bun-release-changeset.yml@main
+    needs: code
+    secrets: inherit
