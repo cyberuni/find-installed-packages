@@ -1,3 +1,10 @@
+## [3.0.4](https://github.com/unional/find-installed-packages/compare/v3.0.3...v3.0.4) (2026-05-07)
+
+
+### Performance Improvements
+
+* convert file system operations to async and add memory cache ([71990e7](https://github.com/unional/find-installed-packages/commit/71990e7b4ed9dc2d4e211ba36014b98509d65ca0))
+
 ## [3.0.3](https://github.com/unional/find-installed-packages/compare/v3.0.2...v3.0.3) (2023-06-03)
 
 
