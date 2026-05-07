@@ -15,11 +15,9 @@
 		"name": "Homa Wong (unional)",
 		"email": "homawong@gmail.com"
 	},
-	"main": "dist/index.cjs",
-	"module": "dist/index.mjs",
-	"types": "dist/index.d.cts",
 	"exports": {
 		".": {
+			"source": "./src/index.ts",
 			"import": {
 				"types": "./dist/index.d.mts",
 				"default": "./dist/index.mjs"
@@ -30,8 +28,13 @@
 			}
 		}
 	},
+	"main": "dist/index.cjs",
+	"module": "dist/index.mjs",
+	"types": "dist/index.d.cts",
 	"files": [
-		"dist"
+		"dist",
+		"src",
+		"!**/*.{spec,test,unit,accept,integrate,system,perf,stress,study,stories}.*"
 	],
 	"scripts": {
 		"build": "tsdown",
@@ -53,7 +56,7 @@
 		"tsdown": "latest"
 	},
 	"engines": {
-		"node": ">=14",
-		"bun": ">=1.0"
+		"bun": ">=1.0",
+		"node": ">=14"
 	}
 }
