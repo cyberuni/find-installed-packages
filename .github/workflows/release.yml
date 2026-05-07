@@ -4,7 +4,7 @@ on:
     branches: [main]
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -27,3 +27,4 @@ jobs:
       - run: bunx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
