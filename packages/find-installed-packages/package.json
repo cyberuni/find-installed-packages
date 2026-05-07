@@ -1,6 +1,6 @@
 {
 	"name": "find-installed-packages",
-	"version": "0.0.0-development",
+	"version": "3.1.0",
 	"description": "Find installed packages",
 	"homepage": "https://github.com/unional/find-installed-packages",
 	"bugs": {

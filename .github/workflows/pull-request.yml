@@ -18,3 +18,15 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run verify
+
+  changeset:
+    runs-on: ubuntu-latest
+    if: github.actor != 'renovate[bot]' && github.actor != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Check for changeset
+        run: bunx changeset status --since=origin/main
