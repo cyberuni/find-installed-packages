@@ -9,6 +9,7 @@
 		"changeset": "changeset",
 		"clean": "bun run --filter './packages/*' clean",
 		"coverage": "bun run --filter './packages/*' coverage",
+		"cs": "changeset",
 		"knip": "knip",
 		"check": "biome check",
 		"check:fix": "biome check --write",
