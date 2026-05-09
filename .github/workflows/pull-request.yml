@@ -21,7 +21,7 @@ jobs:
 
   changeset:
     runs-on: ubuntu-latest
-    if: github.actor != 'renovate[bot]' && github.actor != 'dependabot[bot]'
+    if: github.actor != 'renovate[bot]' && github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'changeset-release/')
     steps:
       - uses: actions/checkout@v4
         with:
