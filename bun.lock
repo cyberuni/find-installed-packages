@@ -14,12 +14,12 @@
         "knip": "latest",
         "npm-run-all2": "latest",
         "rimraf": "3.0.2",
-        "typescript": "5.1.6",
+        "typescript": "6.0.3",
       },
     },
     "packages/find-installed-packages": {
       "name": "find-installed-packages",
-      "version": "3.1.0",
+      "version": "3.1.1",
       "dependencies": {
         "temp": "^0.9.4",
         "unpartial": "^1.0.2",
@@ -787,7 +787,7 @@
 
     "type-plus": ["type-plus@7.6.2", "", { "dependencies": { "tersify": "^3.11.1", "unpartial": "^1.0.4" } }, "sha512-qUlXv9Y0/W56pg38m275IMD3WA03QbVoqNY16S3kmwtuA4gOT2iheyUdOp8NWrmXWpf7om98hzr7AZD/eW2jLA=="],
 
-    "typescript": ["typescript@5.1.6", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-zaWCozRZ6DLEWAWFrVDz1H6FVXzUSfTy5FUMWsQlU8Ym5JP9eO4xkTIROFCQvhQf61z6O/G6ugw3SgAnvvm+HA=="],
+    "typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
     "unbash": ["unbash@3.0.0", "", {}, "sha512-FeFPZ/WFT0mbRCuydiZzpPFlrYN8ZUpphQKoq4EeElVIYjYyGzPMxQR/simUwCOJIyVhpFk4RbtyO7RuMpMnHA=="],
 
