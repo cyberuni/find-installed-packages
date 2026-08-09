@@ -2,13 +2,13 @@
 	"name": "find-installed-packages",
 	"version": "3.1.1",
 	"description": "Find installed packages",
-	"homepage": "https://github.com/unional/find-installed-packages",
+	"homepage": "https://github.com/cyberuni/find-installed-packages",
 	"bugs": {
-		"url": "https://github.com/unional/find-installed-packages/issues"
+		"url": "https://github.com/cyberuni/find-installed-packages/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/unional/find-installed-packages.git"
+		"url": "https://github.com/cyberuni/find-installed-packages.git"
 	},
 	"license": "MIT",
 	"author": {
