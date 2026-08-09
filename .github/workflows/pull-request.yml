@@ -2,22 +2,14 @@ name: pull-request
 on:
   pull_request:
     types: [opened, synchronize]
-
-permissions:
-  contents: read
-  pull-requests: write
+  merge_group:
 
 jobs:
-  verify:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bun run verify
+  code:
+    uses: cyberuni/.github/.github/workflows/bun-verify.yml@main
+    with:
+      os: '["ubuntu-latest"]'
+      skip-playwright: true
 
   changeset:
     runs-on: ubuntu-latest
