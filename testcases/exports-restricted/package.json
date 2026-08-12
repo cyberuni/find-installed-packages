@@ -1,8 +1,8 @@
 {
-	"name": "testcase-nested-scoped-one-plugin",
+	"name": "testcase-exports-restricted",
 	"version": "0.0.0",
 	"private": true,
 	"dependencies": {
-		"p1": "*"
+		"plugin-e": "*"
 	}
 }

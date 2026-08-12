@@ -1,5 +1,8 @@
 {
 	"name": "testcase-scoped-one-plugin",
 	"version": "0.0.0",
-	"private": true
+	"private": true,
+	"dependencies": {
+		"@some-scope/plugin-a": "*"
+	}
 }
