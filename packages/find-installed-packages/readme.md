@@ -14,12 +14,48 @@ Find installed packages.
 ## Usage
 
 ```ts
-import { findByKeyword } from 'find-installed-packages'
+import { findByKeywords } from 'find-installed-packages'
 
 (async () => {
-  const packages = await findByKeyord('some-keyword') // ['pkg-a', 'pkg-b']
+  const packages = await findByKeywords(['some-keyword']) // ['pkg-a', 'pkg-b']
+
+  // or from somewhere other than the current directory
+  await findByKeywords(['some-keyword'], { cwd: './packages/app' })
 }())
 ```
+
+A package is returned when its `package.json` declares **every** keyword you ask for.
+
+## How packages are found
+
+Packages are located by walking the declared dependency graph from `cwd` and asking
+the host runtime's module resolver where each one lives, rather than scanning
+`node_modules` folders.
+
+That keeps results correct across layouts a `node_modules` scan gets wrong:
+
+| Layout | Scanning `node_modules` | Resolving |
+| --- | --- | --- |
+| npm / yarn / bun, single package | works | works |
+| pnpm, `bun --linker=isolated` | relies on undocumented store internals | works |
+| Workspaces (tree hoisted to the repo root) | **finds nothing** | works |
+| Yarn Plug'n'Play (no `node_modules` at all) | **finds nothing** | works |
+
+Two consequences worth knowing:
+
+- Only **declared** dependencies are reported. A package present in `node_modules`
+  that nothing depends on is not returned.
+- Under Yarn PnP this must run inside the PnP-enabled process (the normal case for
+  a library loaded by your app). Shelling out to a plain `node` will find nothing.
+
+If `cwd` has no readable `package.json`, or one that declares no dependencies, the
+`node_modules` scan is used as a fallback.
+
+## Cache
+
+Results are cached in the temp folder, keyed by `cwd` plus keywords, and invalidated
+when the lockfile, `package.json`, or top-level `node_modules` changes. Lockfiles are
+looked up from `cwd` upwards, so workspaces are handled.
 
 ## Contribute
 

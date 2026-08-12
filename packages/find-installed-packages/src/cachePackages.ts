@@ -2,7 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { getCacheFilepath } from './getCacheFilepath'
 
-type CacheEntry = { ctimeMs: number; packages: string[] }
+/** `fingerprint` is the install-tree stamp from `getFingerprint`. */
+type CacheEntry = { fingerprint: number; packages: string[] }
 type Cache = Record<string, CacheEntry>
 
 let memoryCache: Cache | undefined
@@ -11,12 +12,13 @@ export function getCacheKey(keywords: string[], cwd: string): string {
 	return JSON.stringify({ cwd: path.resolve(cwd), keywords: [...keywords].sort() })
 }
 
-export function getCachedPackages(key: string, lastCtimeMs: number): string[] | undefined {
+export function getCachedPackages(key: string, fingerprint: number): string[] | undefined {
 	const cache = loadCache()
 	const entry = cache[key]
 	if (entry) {
-		// istanbul ignore next
-		if (entry.ctimeMs < lastCtimeMs) {
+		// Entries from before the stamp changed have no `fingerprint`. Comparing
+		// against `undefined` is always false, which would trust them forever.
+		if (typeof entry.fingerprint !== 'number' || entry.fingerprint < fingerprint) {
 			delete cache[key]
 			saveCache(cache)
 			return undefined
@@ -27,9 +29,9 @@ export function getCachedPackages(key: string, lastCtimeMs: number): string[] | 
 	return undefined
 }
 
-export function setCachedPackages(key: string, ctimeMs: number, packages: string[]) {
+export function setCachedPackages(key: string, fingerprint: number, packages: string[]) {
 	const cache = loadCache()
-	cache[key] = { ctimeMs, packages }
+	cache[key] = { fingerprint, packages }
 	saveCache(cache)
 }
 

@@ -1,5 +1,8 @@
 {
 	"name": "testcase-at-types-plugin",
 	"version": "0.0.0",
-	"private": true
+	"private": true,
+	"dependencies": {
+		"@types/plugin-a": "*"
+	}
 }

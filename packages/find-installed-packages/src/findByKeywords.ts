@@ -1,9 +1,10 @@
-import path from 'node:path'
 import { unpartial } from 'unpartial'
 import { getCachedPackages, getCacheKey, setCachedPackages } from './cachePackages'
 import { findPackagesInfo } from './findPackagesInfo'
+import { getFingerprint } from './getFingerprint'
 import { hasAllKeywords } from './hasAllKeywords'
-import { readFileSafe } from './readFileSafe'
+import { type Manifest, readManifest } from './readManifest'
+import { resolvePackagesInfo } from './resolvePackagesInfo'
 
 export async function findByKeywords(keywords: string[], options?: { cwd?: string }) {
 	const { cwd } = unpartial({ cwd: '.' }, options)
@@ -12,28 +13,32 @@ export async function findByKeywords(keywords: string[], options?: { cwd?: strin
 }
 
 async function getPackages(keywords: string[], cwd: string) {
-	const pkgInfos = await findPackagesInfo(cwd)
-	const ctimeMs = pkgInfos.reduce((t, p) => (t > p.ctimeMs ? t : p.ctimeMs), 0)
 	const cacheKey = getCacheKey(keywords, cwd)
-	const cache = getCachedPackages(cacheKey, ctimeMs)
+	const fingerprint = await getFingerprint(cwd)
+	const cache = getCachedPackages(cacheKey, fingerprint)
 	if (cache) return cache
 
-	const names = await Promise.all(
-		pkgInfos.map(async (pkg) => {
-			const content = await readFileSafe(path.resolve(pkg.path, 'package.json'))
-			if (!content) return undefined
-			try {
-				const pjson = JSON.parse(content)
-				if (hasAllKeywords(pjson.keywords, keywords)) return pjson.name as string
-			} catch {
-				// skip malformed package.json
-			}
-			return undefined
-		}),
-	)
+	const manifests = await collectManifests(cwd)
+	const names = manifests
+		.filter((manifest) => manifest.name && hasAllKeywords(manifest.keywords, keywords))
+		.map((manifest) => manifest.name as string)
 
-	const packages = Array.from(new Set(names.filter((n): n is string => n !== undefined)))
+	const packages = Array.from(new Set(names))
 
-	setCachedPackages(cacheKey, ctimeMs, packages)
+	setCachedPackages(cacheKey, fingerprint, packages)
 	return packages
+}
+
+/**
+ * Prefer the dependency graph as the runtime resolves it.
+ * Fall back to scanning `node_modules` when there is nothing to resolve from —
+ * no readable manifest at `cwd`, or one without dependencies.
+ */
+async function collectManifests(cwd: string): Promise<Manifest[]> {
+	const resolved = await resolvePackagesInfo(cwd)
+	if (resolved) return resolved.map((pkg) => pkg.manifest)
+
+	const infos = await findPackagesInfo(cwd)
+	const manifests = await Promise.all(infos.map((info) => readManifest(info.path)))
+	return manifests.filter((manifest): manifest is Manifest => !!manifest)
 }
