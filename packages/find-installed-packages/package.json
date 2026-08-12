@@ -15,22 +15,16 @@
 		"name": "Homa Wong (unional)",
 		"email": "homawong@gmail.com"
 	},
+	"type": "module",
 	"exports": {
 		".": {
 			"source": "./src/index.ts",
-			"import": {
-				"types": "./dist/index.d.mts",
-				"default": "./dist/index.mjs"
-			},
-			"require": {
-				"types": "./dist/index.d.cts",
-				"default": "./dist/index.cjs"
-			}
+			"types": "./dist/index.d.mts",
+			"default": "./dist/index.mjs"
 		}
 	},
-	"main": "dist/index.cjs",
 	"module": "dist/index.mjs",
-	"types": "dist/index.d.cts",
+	"types": "dist/index.d.mts",
 	"files": [
 		"dist",
 		"src",
@@ -46,6 +40,7 @@
 		"watch": "bun test --watch"
 	},
 	"dependencies": {
+		"package-manager-detector": "^1.8.0",
 		"temp": "^0.9.4",
 		"unpartial": "^1.0.2"
 	},
@@ -57,6 +52,6 @@
 	},
 	"engines": {
 		"bun": ">=1.0",
-		"node": ">=14"
+		"node": ">=20.19"
 	}
 }

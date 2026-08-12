@@ -1,21 +1,21 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { LOCKS } from 'package-manager-detector/constants'
 
 /**
- * Files that change whenever the installed tree changes,
- * across the package managers we care about.
+ * Yarn Plug'n'Play has no lockfile in `LOCKS`, but these change with the
+ * installed tree the same way one does.
  */
-const LOCKFILES = [
-	'bun.lock',
-	'bun.lockb',
-	'package-lock.json',
-	'npm-shrinkwrap.json',
-	'pnpm-lock.yaml',
-	'yarn.lock',
-	'deno.lock',
-	'.pnp.cjs',
-	'.pnp.data.json',
-]
+const PNP_FILES = ['.pnp.cjs', '.pnp.data.json']
+
+/**
+ * Files that change whenever the installed tree changes.
+ *
+ * The lockfile names come from `package-manager-detector` rather than a list of
+ * our own, so new package managers arrive with a dependency bump instead of a
+ * bug report.
+ */
+const LOCKFILES = Object.keys(LOCKS).concat(PNP_FILES)
 
 /**
  * A cheap number that changes when the installed tree changes.
