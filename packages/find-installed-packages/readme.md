@@ -11,6 +11,8 @@
 
 Find installed packages.
 
+ESM only, Node >= 20.19.
+
 ## Usage
 
 ```ts
@@ -56,6 +58,12 @@ If `cwd` has no readable `package.json`, or one that declares no dependencies, t
 Results are cached in the temp folder, keyed by `cwd` plus keywords, and invalidated
 when the lockfile, `package.json`, or top-level `node_modules` changes. Lockfiles are
 looked up from `cwd` upwards, so workspaces are handled.
+
+The lockfile names come from
+[`package-manager-detector`](https://github.com/antfu-collective/package-manager-detector),
+so a new package manager arrives with a dependency bump rather than a bug report.
+Yarn PnP's `.pnp.cjs` and `.pnp.data.json` are watched too, since they change with the
+installed tree even though they are not lockfiles.
 
 ## Contribute
 
