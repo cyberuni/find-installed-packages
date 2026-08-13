@@ -17,7 +17,8 @@
 		"release": "changeset publish",
 		"version": "changeset version",
 		"test": "bun run --filter './packages/*' test",
-		"verify": "npm-run-all clean -p knip build check coverage",
+		"typecheck": "tsc -p tsconfig.json && bun run --filter './packages/*' typecheck",
+		"verify": "npm-run-all clean -p knip typecheck build check coverage",
 		"watch": "bun run --filter './packages/*' watch"
 	},
 	"devDependencies": {
@@ -26,6 +27,7 @@
 		"@commitlint/cli": "17.8.1",
 		"@commitlint/config-conventional": "17.8.1",
 		"@repobuddy/biome": "2.3.1",
+		"@repobuddy/typescript": "^2.1.0",
 		"husky": "9.1.7",
 		"knip": "latest",
 		"npm-run-all2": "latest",

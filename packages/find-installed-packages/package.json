@@ -36,7 +36,8 @@
 		"codacy": "cat coverage/lcov.info | codacy-coverage",
 		"coverage": "bun test --coverage",
 		"test": "bun test",
-		"verify": "npm-run-all clean -p build lint coverage",
+		"typecheck": "tsc -p tsconfig.json",
+		"verify": "npm-run-all clean -p build typecheck coverage",
 		"watch": "bun test --watch"
 	},
 	"dependencies": {
