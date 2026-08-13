@@ -17,7 +17,8 @@
 		"release": "changeset publish",
 		"version": "changeset version",
 		"test": "bun run --filter './packages/*' test",
-		"verify": "npm-run-all clean -p knip build check coverage",
+		"typecheck": "tsc -p tsconfig.json && bun run --filter './packages/*' typecheck",
+		"verify": "npm-run-all clean -p knip typecheck build check coverage",
 		"watch": "bun run --filter './packages/*' watch"
 	},
 	"devDependencies": {
