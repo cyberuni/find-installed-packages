@@ -1,15 +1,16 @@
 {
+	"extends": [
+		"@repobuddy/typescript/tsconfig/interop/buddy",
+		"@repobuddy/typescript/tsconfig/interop/esm",
+		"@repobuddy/typescript/tsconfig/language/buddy",
+		"@repobuddy/typescript/tsconfig/modules/es2022",
+		"@repobuddy/typescript/tsconfig/type-checking/buddy"
+	],
 	"compilerOptions": {
-		"esModuleInterop": true,
-		"isolatedModules": true,
-		"lib": ["es2022"],
-		"module": "esnext",
-		"moduleResolution": "bundler",
-		"noUnusedLocals": true,
-		"noUnusedParameters": false,
-		"skipLibCheck": true,
-		"strict": true,
+		// the presets target es2020; engines.node is >=20.19, which is fully es2022.
 		"target": "es2022",
+		// third-party .d.ts (@types/node, bun-types) do not typecheck against our lib.
+		"skipLibCheck": true,
 		"verbatimModuleSyntax": true
 	}
 }

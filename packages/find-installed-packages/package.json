@@ -37,7 +37,7 @@
 		"coverage": "bun test --coverage",
 		"test": "bun test",
 		"typecheck": "tsc -p tsconfig.json",
-		"verify": "npm-run-all clean -p build lint coverage",
+		"verify": "npm-run-all clean -p build typecheck coverage",
 		"watch": "bun test --watch"
 	},
 	"dependencies": {
