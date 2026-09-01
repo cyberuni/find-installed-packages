@@ -5,13 +5,13 @@ on:
 
 jobs:
   code:
-    uses: cyberuni/.github/.github/workflows/bun-verify.yml@main
+    uses: cyberuni/.github/.github/workflows/bun-verify.yml@v2
     with:
       os: '["ubuntu-latest"]'
       skip-playwright: true
 
   release:
-    uses: cyberuni/.github/.github/workflows/bun-release-changeset-oidc.yml@main
+    uses: cyberuni/.github/.github/workflows/bun-release-changeset-oidc.yml@v2
     needs: code
     permissions:
       id-token: write
