@@ -1,4 +1,19 @@
 {
 	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
-	"extends": ["github>unional/renovate-preset"]
+	"extends": ["github>unional/renovate-preset"],
+	"packageRules": [
+		{
+			"description": "Automerge non-major devDependency and GitHub Actions updates through the merge queue. platformAutomerge hands the PR to GitHub's auto-merge, which enqueues it natively instead of merging around the queue. Runtime dependencies, peerDependencies and every major stay manual: they change what consumers install, or break builds in ways a human should choose to absorb.",
+			"matchDepTypes": ["devDependencies"],
+			"matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+			"automerge": true,
+			"platformAutomerge": true
+		},
+		{
+			"matchManagers": ["github-actions"],
+			"matchUpdateTypes": ["minor", "patch", "digest"],
+			"automerge": true,
+			"platformAutomerge": true
+		}
+	]
 }
