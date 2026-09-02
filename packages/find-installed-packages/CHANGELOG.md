@@ -1,5 +1,13 @@
 # find-installed-packages
 
+## 4.0.1
+
+### Patch Changes
+
+- 9f54c4f: Include the `LICENSE` file in the published package. Previously the package declared `"license": "MIT"` but shipped no license text because the root `LICENSE` file was never copied into the package directory.
+- 25d73e8: Upgrade `@changesets/cli` to v3, the version matched to the `changesets/action@v2`
+  pinned by the shared release workflow.
+
 ## 4.0.0
 
 ### Major Changes
