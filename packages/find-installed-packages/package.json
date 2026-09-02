@@ -33,7 +33,6 @@
 	"scripts": {
 		"build": "tsdown",
 		"clean": "rimraf dist",
-		"codacy": "cat coverage/lcov.info | codacy-coverage",
 		"coverage": "bun test --coverage",
 		"test": "bun test",
 		"typecheck": "tsc -p tsconfig.json",
