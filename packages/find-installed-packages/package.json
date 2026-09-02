@@ -48,8 +48,8 @@
 	"devDependencies": {
 		"@types/temp": "^0.9.4",
 		"assertron": "^11.5.0",
-		"bun-types": "latest",
-		"tsdown": "latest"
+		"bun-types": "^1.4.0",
+		"tsdown": "^0.22.14"
 	},
 	"engines": {
 		"bun": ">=1.0",

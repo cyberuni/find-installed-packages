@@ -1,0 +1,20 @@
+# Supply-chain release soak.
+#
+# Only install package versions that have been on the registry for at least a day, so a
+# compromised release that is yanked within hours never reaches this repo. bun enforces
+# this at resolution time; verified on bun 1.4.0 by setting an absurd age and watching it
+# resolve a dependency down to an older version rather than reporting success and doing
+# nothing.
+#
+# This is the bun counterpart to `minimumReleaseAge` in pnpm-workspace.yaml. Do NOT put it
+# in .npmrc — `minimumreleaseage` is not a valid npm key, it never reaches typed config,
+# and the resulting soak is decorative.
+#
+# The fleet Renovate preset (github>unional/renovate-preset) carries a matching
+# `minimumReleaseAge: "1 day"`, so update PRs are not even raised inside the window. This
+# file is the second layer: it also covers installs that do not come from Renovate.
+#
+# There is deliberately no exclude list. Never widen one to make an install pass — pin an
+# older mature version instead.
+[install]
+minimumReleaseAge = 86400
