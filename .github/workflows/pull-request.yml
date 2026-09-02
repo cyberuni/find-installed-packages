@@ -13,7 +13,18 @@ jobs:
 
   changeset:
     runs-on: ubuntu-latest
-    if: github.actor != 'renovate[bot]' && github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'changeset-release/')
+    # `pull_request` only. On `merge_group` there is no `github.head_ref`, so the
+    # changeset-release guard below silently stops matching and this job runs against the
+    # queued "Version Packages" commit — where every changeset has just been consumed and
+    # `changeset status` therefore exits 1. That made the merge-queue run for #287 red
+    # even though the PR was correct; it merged only because `changeset` is not a required
+    # status context. There is nothing to check in the queue anyway: the same commits were
+    # already checked on the pull request.
+    if: >-
+      github.event_name == 'pull_request'
+      && github.actor != 'renovate[bot]'
+      && github.actor != 'dependabot[bot]'
+      && !startsWith(github.head_ref, 'changeset-release/')
     steps:
       - uses: actions/checkout@v7
         with:
