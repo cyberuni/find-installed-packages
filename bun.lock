@@ -9,7 +9,7 @@
         "@changesets/cli": "^3",
         "@commitlint/cli": "^21.2.2",
         "@commitlint/config-conventional": "^21.2.2",
-        "@repobuddy/biome": "2.4.0",
+        "@repobuddy/biome": "2.5.0",
         "@repobuddy/typescript": "^2.1.0",
         "husky": "^9.1.7",
         "knip": "^6.34.0",
@@ -227,7 +227,7 @@
 
     "@quansync/fs": ["@quansync/fs@1.0.0", "", { "dependencies": { "quansync": "^1.0.0" } }, "sha512-4TJ3DFtlf1L5LDMaM6CanJ/0lckGNtJcMjQ1NAV6zDmA0tEHKZtxNKin8EgPaVX1YzljbxckyT2tJrpQKAtngQ=="],
 
-    "@repobuddy/biome": ["@repobuddy/biome@2.4.0", "", { "peerDependencies": { "@biomejs/biome": ">= 2" } }, "sha512-YdMjhey4Y9XzDR1cOIFFNBr6O+87TkFA1pViDFEFFryYKUdJ3qN/yZpCgcL1exZsuGDxC+0540hmJmtl9wKBQQ=="],
+    "@repobuddy/biome": ["@repobuddy/biome@2.5.0", "", { "peerDependencies": { "@biomejs/biome": ">= 2" } }, "sha512-/BGDUyepN6raSPBt+LEoLsWuCLFt5mhxNoogGnIF8voeIft/Oj/NlygGMNl8B0SF2QKw95TxH/WWcJmarW7Xnw=="],
 
     "@repobuddy/typescript": ["@repobuddy/typescript@2.1.0", "", { "dependencies": { "clibuilder": "^9.0.0", "dirname-filename-esm": "^1.1.1", "execa": "^9.0.0" } }, "sha512-b9owazWwMPs357qqti4CrIt7+isqcPbsUOZmW+Yc0L7OVz2YmrHhCgg2ggFGQgSFhhMWc/mQQ18K8VVR5KxPBQ=="],
 
