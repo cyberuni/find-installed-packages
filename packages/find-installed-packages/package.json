@@ -28,7 +28,8 @@
 	"files": [
 		"dist",
 		"src",
-		"!**/*.{spec,test,unit,accept,integrate,system,perf,stress,study,stories}.*"
+		"!**/*.{spec,test,unit,accept,integrate,system,perf,stress,study,stories}.*",
+		"CHANGELOG.md"
 	],
 	"scripts": {
 		"build": "tsdown",
