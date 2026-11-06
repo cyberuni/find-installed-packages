@@ -3,7 +3,8 @@
 	"private": true,
 	"workspaces": [
 		"apps/*",
-		"packages/*"
+		"packages/*",
+		"tools/*"
 	],
 	"scripts": {
 		"build": "bun run --filter './packages/*' --filter './apps/*' build",
@@ -18,7 +19,7 @@
 		"release": "changeset publish",
 		"version": "changeset version",
 		"test": "bun run --filter './packages/*' test",
-		"typecheck": "tsc -p tsconfig.json && bun run --filter './packages/*' typecheck",
+		"typecheck": "tsc -p tsconfig.json && bun run --filter './packages/*' --filter './tools/*' typecheck",
 		"typecheck:web": "bun run --filter website typecheck",
 		"verify": "npm-run-all clean -p knip typecheck build check coverage -s typecheck:web",
 		"watch": "bun run --filter './packages/*' watch",
