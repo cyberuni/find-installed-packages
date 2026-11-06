@@ -1,0 +1,13 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"noEmit": true,
+		// Node runs these files directly by stripping the types, so imports name the `.ts` file.
+		"allowImportingTsExtensions": true,
+		"erasableSyntaxOnly": true,
+		"allowJs": true,
+		"checkJs": true,
+		"types": ["node"]
+	},
+	"include": ["src"]
+}

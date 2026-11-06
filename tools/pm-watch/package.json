@@ -1,0 +1,18 @@
+{
+	"name": "pm-watch",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Installs a fixture with each package manager's latest release and checks findByKeywords against it",
+	"type": "module",
+	"scripts": {
+		"check": "node src/check.ts",
+		"report": "node src/report.ts",
+		"typecheck": "tsc -p tsconfig.json"
+	},
+	"devDependencies": {
+		"@types/node": "^25.6.0"
+	},
+	"engines": {
+		"node": ">=22.18"
+	}
+}
