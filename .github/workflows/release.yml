@@ -10,6 +10,35 @@ jobs:
       os: '["ubuntu-latest"]'
       skip-playwright: true
 
+  # Bun's resolver serves `<pkg>/package.json` even when `exports` hides it, so `bun test`
+  # never reaches the `require.resolve.paths()` fallback in `resolvePackageDir`. This runs
+  # the Node spec against the build and uploads its coverage, mapped back to `src/`, under
+  # the `node` flag. Codecov merges it with Bun's upload for the same commit.
+  #
+  # Not a required check: it exists for the upload. A failing Node spec still fails it.
+  # Codecov runs without a token here, and a rejected upload still shows a green step, so
+  # read the upload log rather than the step's status.
+  node-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+      - run: bun install --frozen-lockfile
+      - name: Build
+        working-directory: packages/find-installed-packages
+        run: bun run build
+      - name: Node spec with coverage
+        working-directory: packages/find-installed-packages
+        run: bun run coverage:node
+      - uses: codecov/codecov-action@v5
+        with:
+          files: packages/find-installed-packages/coverage/node/lcov.info
+          disable_search: true
+          flags: node
+
   release:
     uses: cyberuni/.github/.github/workflows/bun-release-changeset-oidc.yml@v2
     needs: code

@@ -1,0 +1,7 @@
+{
+	"experimental-monocart": true,
+	"reporter": ["lcovonly", "text"],
+	"report-dir": "coverage/node",
+	"include": ["dist/**", "src/**"],
+	"exclude-after-remap": true
+}

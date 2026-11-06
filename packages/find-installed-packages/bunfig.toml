@@ -1,0 +1,5 @@
+# `bun test --coverage` prints a table only unless lcov is asked for. Without the lcov
+# file, the Codecov step in the shared verify workflow finds nothing to upload, and the
+# step still goes green.
+[test]
+coverageReporter = ["text", "lcov"]

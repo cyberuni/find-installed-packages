@@ -88,8 +88,8 @@ Deno is not listed as a supported runtime. These results are from probing it, no
 - **With `node_modules`** (the default for a `package.json` project, or `nodeModulesDir: "auto"`), it
   works from a single package and a workspace, run under Deno or Node.
 - **With `nodeModulesDir: "none"`**, packages are served from Deno's global cache. Ordinary packages
-  are found, but a package whose `exports` hides both `./package.json` and any `require` entry is
-  missed: Deno's `require.resolve.paths` returns the package's own folder rather than a
+  are found, but a package whose `exports` hides `./package.json` is missed, even when it has a
+  `require` entry: Deno's `require.resolve.paths` returns the package's own folder rather than a
   `node_modules` folder above it. Use `nodeModulesDir: "auto"` or `"manual"` if you need such a package.
 
 ## Not yet supported
