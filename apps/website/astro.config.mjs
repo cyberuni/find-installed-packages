@@ -51,6 +51,7 @@ export default defineConfig({
 					items: [
 						{ label: 'Keyword matching', slug: 'guides/keyword-matching' },
 						{ label: 'How packages are found', slug: 'guides/how-packages-are-found' },
+						{ label: 'Package managers', slug: 'package-managers' },
 						{ label: 'Cache', slug: 'guides/cache' },
 					],
 				},
