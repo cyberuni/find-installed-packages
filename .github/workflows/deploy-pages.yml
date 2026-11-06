@@ -23,7 +23,7 @@ jobs:
       # Astro runs on Node (its bin has a node shebang) and needs >= 22.12.
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '26'
       - uses: actions/configure-pages@v5
       - run: bun install --frozen-lockfile
       - run: bun run web build
