@@ -34,7 +34,7 @@ jobs:
       - name: Node spec with coverage
         working-directory: packages/find-installed-packages
         run: bun run coverage:node
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         with:
           files: packages/find-installed-packages/coverage/node/lcov.info
           disable_search: true
