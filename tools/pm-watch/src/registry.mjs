@@ -41,6 +41,7 @@ for (const dir of dirs) {
 
 // `/name`, `/@scope/name`, or the tarball `/name/-/name-1.2.3.tgz` under either.
 const UPSTREAM_PATH = /^\/((?:@[\w.~-]+(?:\/|%2f))?[\w.~-]+(?:\/-\/[\w.~+-]+\.tgz)?)$/i
+const UPSTREAM = 'https://registry.npmjs.org'
 const OLD = '2020-01-01T00:00:00.000Z'
 const server = http.createServer(async (req, res) => {
 	const url = new URL(req.url ?? '/', 'http://127.0.0.1')
@@ -56,7 +57,11 @@ const server = http.createServer(async (req, res) => {
 			return
 		}
 		try {
-			const upstream = await fetch(`https://registry.npmjs.org/${match[1]}`, {
+			const [upstreamName = '', upstreamFile] = decodeURIComponent(match[1] ?? '').split('/-/')
+			const upstreamPath = `/${encodeURIComponent(upstreamName)}${upstreamFile ? `/-/${encodeURIComponent(upstreamFile)}` : ''}`
+			const target = new URL(upstreamPath, UPSTREAM)
+			if (target.origin !== UPSTREAM) throw new Error('not upstream')
+			const upstream = await fetch(target, {
 				headers: { accept: req.headers.accept ?? 'application/json' },
 			})
 			res.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'application/json' })
