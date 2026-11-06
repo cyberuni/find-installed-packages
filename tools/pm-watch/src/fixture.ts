@@ -28,12 +28,14 @@ export type Variant = {
  * - `plugin-a`: tagged, direct, and depends on `plugin-b`.
  * - `plugin-b`: tagged, reachable only through `plugin-a`.
  * - `plugin-c`: untagged, must not be reported.
- * - `plugin-d`: tagged, and its `exports` hides `./package.json`.
+ * - `plugin-d`: tagged, and its `exports` hides `./package.json` and has no `require` entry.
+ * - `plugin-e`: tagged, and its `exports` hides `./package.json` but has a `require` entry.
  * - `plugin-ws` (workspace variant only): a tagged sibling workspace.
  */
-export function writeFixture(root: string, cell: Cell): Variant[] {
+export function writeFixture(root: string, cell: Cell, subject: { version: string; dir: string }): Variant[] {
 	const pkgs = path.join(root, 'pkgs')
-	const dep = (name: string) => `file:${path.join(pkgs, name)}`
+	// A registry cell installs by version range from the registry the check serves out of `pkgs`.
+	const dep = (name: string) => (cell.registry ? '^1.0.0' : `file:${path.join(pkgs, name)}`)
 
 	writeJson(path.join(pkgs, 'plugin-a', 'package.json'), {
 		name: 'plugin-a',
@@ -55,14 +57,30 @@ export function writeFixture(root: string, cell: Cell): Variant[] {
 		name: 'plugin-d',
 		version: '1.0.0',
 		keywords: [KEYWORD],
-		exports: { '.': './index.js' },
+		type: 'module',
+		exports: { '.': { import: './index.js' } },
 	})
-	fs.writeFileSync(path.join(pkgs, 'plugin-d', 'index.js'), 'module.exports = {}\n')
+	fs.writeFileSync(path.join(pkgs, 'plugin-d', 'index.js'), 'export default {}\n')
+	writeJson(path.join(pkgs, 'plugin-e', 'package.json'), {
+		name: 'plugin-e',
+		version: '1.0.0',
+		keywords: [KEYWORD],
+		exports: { '.': { require: './index.js' } },
+	})
+	fs.writeFileSync(path.join(pkgs, 'plugin-e', 'index.js'), 'module.exports = {}\n')
 
-	const dependencies = {
+	const dependencies: Record<string, string> = {
+		// These cells run the package as a consumer does: installed in the project. Deno resolves a
+		// package's own imports from the project, and Yarn serves `pnpapi` only inside it.
+		...(cell.registry
+			? { 'find-installed-packages': subject.version }
+			: cell.installSubject
+				? { 'find-installed-packages': `file:${subject.dir}` }
+				: {}),
 		'plugin-a': dep('plugin-a'),
 		'plugin-c': dep('plugin-c'),
 		'plugin-d': dep('plugin-d'),
+		'plugin-e': dep('plugin-e'),
 	}
 
 	const standalone = path.join(root, 'standalone')
@@ -88,7 +106,7 @@ export function writeFixture(root: string, cell: Cell): Variant[] {
 		name: 'app',
 		version: '0.0.0',
 		private: true,
-		dependencies: { ...dependencies, 'plugin-ws': cell.workspaceRange },
+		dependencies: { ...dependencies, ...(cell.workspaceRange ? { 'plugin-ws': cell.workspaceRange } : {}) },
 	})
 	writeJson(path.join(workspace, 'packages', 'plugin-ws', 'package.json'), {
 		name: 'plugin-ws',
@@ -102,17 +120,23 @@ export function writeFixture(root: string, cell: Cell): Variant[] {
 			name: 'standalone',
 			installRoot: standalone,
 			cwd: standalone,
-			expected: ['plugin-a', 'plugin-b', 'plugin-d'],
+			expected: ['plugin-a', 'plugin-b', 'plugin-d', 'plugin-e'],
 			dropped: 'plugin-d',
 		},
 		{
 			name: 'workspace',
 			installRoot: workspace,
 			cwd: path.join(workspace, 'packages', 'app'),
-			expected: ['plugin-a', 'plugin-b', 'plugin-d', 'plugin-ws'],
+			expected: ['plugin-a', 'plugin-b', 'plugin-d', 'plugin-e', ...(cell.workspaceRange ? ['plugin-ws'] : [])],
 			dropped: 'plugin-d',
 		},
 	]
+}
+
+/** The package folders `writeFixture` wrote, for a registry cell to serve. */
+export function packageFolders(root: string): string[] {
+	const pkgs = path.join(root, 'pkgs')
+	return fs.readdirSync(pkgs).map((name) => path.join(pkgs, name))
 }
 
 /** Remove `variant.dropped` from the `cwd` manifest and return the new expected set. */

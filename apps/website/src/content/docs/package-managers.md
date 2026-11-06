@@ -11,16 +11,16 @@ what happens where one falls short.
 
 ## At a glance
 
-| Layout or capability | npm | pnpm | Yarn classic | Yarn berry | Bun | Deno (not listed as supported) |
+| Layout or capability | npm | pnpm | Yarn classic | Yarn berry | Bun | Deno |
 | --- | --- | --- | --- | --- | --- | --- |
 | Verified against | 12.2.2 | 12.18.0 | 1.22.22 | 4.18.1 | 1.4.4 | 2.9.8 |
 | Default layout | ✓ hoisted | ✓ isolated store | ✓ hoisted | ✓ Plug'n'Play | ✓ hoisted; isolated in a workspace | ✓ `node_modules` |
 | Hoisted folders | ✓ default | ✓ `nodeLinker: hoisted` | ✓ default | ✓ `nodeLinker: node-modules` | ✓ `--linker=hoisted` | — |
 | Symlinks into a store | ✓ `--install-strategy=linked` | ✓ default | — | ✓ `nodeLinker: pnpm` | ✓ `--linker=isolated` | ✓ `node_modules/.deno` |
-| Store outside the project | — | ✓ `enableGlobalVirtualStore` | — | — | ✓ `globalStore = true` | ⚠ `nodeModulesDir: "none"` |
-| No package folders on disk | — | ✗ `nodeLinker: { type: loaded }` | — | ✓ Plug'n'Play, inside `yarn node` | — | ⚠ `nodeModulesDir: "none"` |
-| Workspaces, from a member package | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| A package whose `exports` hides `package.json` | ✓ | ✓ (✗ under `loaded`) | ✓ | ✓ | ✓ | ✓ (✗ under `"none"`) |
+| Store outside the project | — | ✓ `enableGlobalVirtualStore` | — | — | ✓ `globalStore = true` | ✓ `nodeModulesDir: "none"` |
+| No package folders on disk | — | ✗ `nodeLinker: { type: loaded }` | — | ✓ Plug'n'Play, inside `yarn node` | — | — |
+| Workspaces, from a member package | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ (⚠ under `"none"`) |
+| A package whose `exports` hides `package.json` | ✓ | ✓ (✗ under `loaded`) | ✓ | ✓ | ✓ | ✓ |
 | Lockfile the cache watches | `package-lock.json` | `pnpm-lock.yaml` | `yarn.lock` | `yarn.lock`, `.pnp.cjs`, `.pnp.data.json` | `bun.lock`, `bun.lockb` | `deno.lock` |
 
 ✓ verified with a real install. ⚠ partly works, see the manager's section. ✗ verified not to work.
@@ -31,8 +31,8 @@ what happens where one falls short.
 The default layouts are checked every week against each manager's latest release by the
 [`pm-latest-watch`](https://github.com/cyberuni/find-installed-packages/actions/workflows/pm-latest-watch.yml)
 job ([workflow](https://github.com/cyberuni/find-installed-packages/blob/main/.github/workflows/pm-latest-watch.yml)).
-It covers npm, pnpm, Yarn classic, Yarn berry with `node-modules` and Plug'n'Play, and Bun hoisted and
-isolated. It opens an issue when one breaks. Treat its latest green run as the live version of the
+It covers npm, pnpm, Yarn classic, Yarn berry with `node-modules` and Plug'n'Play, Bun hoisted and
+isolated, and Deno with `nodeModulesDir` `"none"` and `"auto"`. It opens an issue when one breaks. Treat its latest green run as the live version of the
 "Verified against" row for those layouts.
 
 The other layouts on this page were verified by hand on 2026-11-06. The versions and the exact probe
@@ -83,14 +83,17 @@ Hoisted `node_modules`, single package and workspaces. Yarn 1 is in maintenance 
 
 ## Deno
 
-Deno is not listed as a supported runtime. These results are from probing it, not a promise.
-
 - **With `node_modules`** (the default for a `package.json` project, or `nodeModulesDir: "auto"`), it
   works from a single package and a workspace, run under Deno or Node.
-- **With `nodeModulesDir: "none"`**, packages are served from Deno's global cache. Ordinary packages
-  are found, but a package whose `exports` hides `./package.json` is missed, even when it has a
-  `require` entry: Deno's `require.resolve.paths` returns the package's own folder rather than a
-  `node_modules` folder above it. Use `nodeModulesDir: "auto"` or `"manual"` if you need such a package.
+- **With `nodeModulesDir: "none"`**, packages are served from Deno's global cache and the packages are
+  found, including one whose `exports` hides `./package.json`, with or without a `require` entry. There
+  `require.resolve.paths` returns the package's own cache folder rather than a `node_modules` folder, and
+  the resolver accepts that folder when its `package.json` names the package. Deno 2.9.8 was verified
+  on 2026-11-06. One thing is missed: from a workspace member, a dependency on a sibling workspace
+  package is not found, because with no `node_modules` the resolver cannot reach it. Use
+  `nodeModulesDir: "auto"` or `"manual"` if you depend on a sibling.
+
+Deno is checked every week, but it is not yet listed as a supported runtime in the readme.
 
 ## Not yet supported
 

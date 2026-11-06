@@ -5,7 +5,7 @@ import path from 'node:path'
 import { findByKeywords } from '.'
 import { clearCache } from './cachePackages'
 import { getPnpApi } from './getPnpApi'
-import { resolvePackagesInfo } from './resolvePackagesInfo'
+import { type LookupPaths, resolvePackagesInfo } from './resolvePackagesInfo'
 
 beforeAll(() => {
 	clearCache()
@@ -218,6 +218,89 @@ describe('Yarn PnP', () => {
 
 		expect(hidden?.path).toBe(path.join(root, '.yarn', 'cache', 'plugin-hidden.zip', 'node_modules', 'plugin-hidden'))
 		expect(hidden?.manifest.keywords).toEqual(['some-keyword'])
+	})
+})
+
+describe('Deno\'s global cache (`nodeModulesDir: "none"`)', () => {
+	// There is no `node_modules`: each package sits in its own cache folder, and
+	// `require.resolve.paths(name)` starts with that folder rather than a `node_modules`
+	// above it. The real Deno is checked by the weekly watch (`tools/pm-watch`, cell
+	// `deno-none`); CI cannot run it here, so the lookups are supplied.
+	let root: string
+	let lookups: LookupPaths
+	const cacheOf = (name: string) => path.join(root, 'deno-dir', 'npm', 'registry', name, '1.0.0')
+
+	beforeAll(() => {
+		root = fs.mkdtempSync(path.join(os.tmpdir(), 'fip-deno-none-'))
+		write(path.join(root, 'package.json'), {
+			name: 'testcase-deno-none',
+			version: '0.0.0',
+			private: true,
+			dependencies: { 'plugin-hidden': '*', 'plugin-require': '*', 'plugin-a': '*', 'plugin-liar': '*' },
+		})
+		// `exports` hides `./package.json`, with no `require` entry and with one.
+		write(path.join(cacheOf('plugin-hidden'), 'package.json'), {
+			name: 'plugin-hidden',
+			version: '1.0.0',
+			keywords: ['some-keyword'],
+			exports: { '.': { import: './index.js' } },
+		})
+		write(path.join(cacheOf('plugin-require'), 'package.json'), {
+			name: 'plugin-require',
+			version: '1.0.0',
+			keywords: ['some-keyword'],
+			exports: { '.': { require: './index.js' } },
+		})
+		write(path.join(cacheOf('plugin-a'), 'package.json'), {
+			name: 'plugin-a',
+			version: '1.0.0',
+			keywords: ['some-keyword'],
+			dependencies: { 'plugin-transitive': '*' },
+		})
+		write(path.join(cacheOf('plugin-transitive'), 'package.json'), {
+			name: 'plugin-transitive',
+			version: '1.0.0',
+			keywords: ['some-keyword'],
+		})
+		// A folder in the lookups whose manifest names another package. Never taken for `plugin-liar`.
+		write(path.join(cacheOf('plugin-other'), 'package.json'), {
+			name: 'plugin-other',
+			version: '1.0.0',
+			keywords: ['some-keyword'],
+		})
+
+		lookups = (name) => [
+			name === 'plugin-liar' ? cacheOf('plugin-other') : cacheOf(name),
+			path.join(root, 'node_modules'),
+			path.join(path.dirname(root), 'node_modules'),
+		]
+	})
+
+	afterAll(() => {
+		fs.rmSync(root, { recursive: true, force: true })
+	})
+
+	test('finds a package whose lookup is its own folder, with or without a `require` entry', async () => {
+		const resolved = await resolvePackagesInfo(root, undefined, lookups)
+
+		expect(resolved?.map((pkg) => pkg.name).sort()).toEqual([
+			'plugin-a',
+			'plugin-hidden',
+			'plugin-require',
+			'plugin-transitive',
+		])
+	})
+
+	test('reports the cache folder as the package path', async () => {
+		const resolved = await resolvePackagesInfo(root, undefined, lookups)
+
+		expect(resolved?.find((pkg) => pkg.name === 'plugin-hidden')?.path).toBe(fs.realpathSync(cacheOf('plugin-hidden')))
+	})
+
+	test('does not take a lookup folder for a package its manifest does not name', async () => {
+		const resolved = await resolvePackagesInfo(root, undefined, lookups)
+
+		expect(resolved?.some((pkg) => pkg.name === 'plugin-other')).toBe(false)
 	})
 })
 

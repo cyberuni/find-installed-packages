@@ -18,9 +18,17 @@ It runs one matrix cell per manager and mode, and opens one issue when any cell 
 | `yarn-berry-pnp` | Yarn 2+ | `nodeLinker: pnp` | `yarn node` (Yarn's PnP runtime) |
 | `bun-hoisted` | Bun | `bun install --linker=hoisted` | Node and Bun |
 | `bun-isolated` | Bun | `bun install --linker=isolated` | Node and Bun |
+| `deno-none` | Deno | `deno install`, `nodeModulesDir: "none"` | Deno |
+| `deno-auto` | Deno | `deno install`, `nodeModulesDir: "auto"` | Node and Deno |
 
 npm gets `--install-links` because by default it symlinks a `file:` folder and never installs that package's own dependencies.
 With the flag, npm packs each folder and installs it the way it installs a registry package.
+
+The Deno cells cannot use `file:` packages, which `deno install` skips without an error.
+They install from a throwaway registry (`registry.mjs`) that serves the fixture packages and this package, and forwards every other name to npm.
+They run a probe copied into the project that imports `find-installed-packages` by name, because Deno resolves a package's own imports from the project, not from where the file sits.
+`yarn-berry-pnp` installs this package into the project the same way (as a `file:` dependency) and runs that probe, because Yarn serves `pnpapi` only to files inside the project.
+`deno-none` leaves out `plugin-ws`: with no `node_modules`, `require.resolve` cannot reach a workspace sibling.
 
 ## What one cell checks
 
@@ -30,7 +38,8 @@ Every dependency is a local `file:` package, so nothing comes from a registry:
 - `plugin-a`: tagged with the keyword, a direct dependency.
 - `plugin-b`: tagged, reachable only through `plugin-a`.
 - `plugin-c`: not tagged, so it must not be reported.
-- `plugin-d`: tagged, and its `exports` hides `./package.json`.
+- `plugin-d`: tagged, and its `exports` hides `./package.json` and has no `require` entry.
+- `plugin-e`: tagged, and its `exports` hides `./package.json` but has a `require` entry.
 - `plugin-ws`: tagged, a sibling workspace (workspace variant only).
 
 It checks two variants, a standalone project and a workspace (`findByKeywords` runs from `packages/app`).
@@ -60,7 +69,7 @@ A cell with no result file counts as failed.
 ## The workflow
 
 - Runs every Monday at 09:00 UTC, on `workflow_dispatch`, and on pull requests that change this tool or the workflow.
-- Fetches each manager with `npm install --global <name>@latest`, or `oven-sh/setup-bun` with `bun-version: latest`. The resolved version is in each cell's log, step summary and the issue.
+- Fetches each manager with `npm install --global <name>@latest`, `oven-sh/setup-bun` with `bun-version: latest`, or `denoland/setup-deno` with `deno-version: latest`. The resolved version is in each cell's log, step summary and the issue.
 - Opens an issue titled `chore: package manager latest-release check failed`, labelled `pm-watch` and `maintenance`, only on the schedule or on a dispatch with `dry_run` off. It skips opening one while an issue with that title is open.
 - A dispatch with `dry_run` on, and every pull request run, print the issue body instead.
 - The run stays red while any cell fails.
