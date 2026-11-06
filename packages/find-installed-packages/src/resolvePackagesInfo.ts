@@ -68,22 +68,25 @@ async function walk(
 /**
  * Locate the folder of `name` as resolved from `fromDir`.
  *
- * Under Yarn PnP the PnP API answers first. Otherwise three strategies, most faithful
- * first, because no single one covers every case.
+ * Under Yarn PnP the PnP API answers first. Otherwise two strategies, most faithful
+ * first.
  *
  * Note on coverage: Bun's resolver serves `<pkg>/package.json` even when `exports`
- * does not list it, so strategy 1 always wins under `bun test` and the fallbacks
- * report as uncovered. They are not dead code — under Node strategy 2 covers an
- * `exports`-restricted package in a `node_modules` tree, and strategy 3 one that
- * has a `require` entry, under any layout.
+ * does not list it, so strategy 1 always wins under `bun test` and strategy 2 reports
+ * as uncovered there. It is not dead code: under Node it is what finds an
+ * `exports`-restricted package in a `node_modules` tree.
+ *
+ * There is no third "resolve the entry point and walk up" strategy. `require.resolve`
+ * searches exactly the folders `require.resolve.paths()` lists, so in a `node_modules`
+ * tree strategy 2 finds anything it could, and under PnP strategy 0 does.
  */
 function resolvePackageDir(name: string, fromDir: string, pnp: PnpApi | undefined): string | undefined {
 	const issuer = path.join(fromDir, 'package.json')
 
 	// 0. Under PnP, ask where the package lives. Unlike `require.resolve`, this ignores
 	// `exports`, so it also finds a package that exposes neither `./package.json` nor a
-	// `require` entry — the case strategies 1 and 3 miss and strategy 2 cannot reach,
-	// since there are no lookup paths under PnP.
+	// `require` entry — the case strategy 1 misses and strategy 2 cannot reach, since
+	// there are no lookup paths under PnP.
 	if (pnp) {
 		try {
 			const dir = pnp.resolveToUnqualified(name, issuer)
@@ -116,26 +119,5 @@ function resolvePackageDir(name: string, fromDir: string, pnp: PnpApi | undefine
 		// resolve.paths is unavailable under some resolvers (PnP returns null)
 	}
 
-	// 3. Resolve the entry point and walk up to the manifest that declares it.
-	try {
-		let dir = path.dirname(require.resolve(name))
-		for (;;) {
-			if (readNameSync(dir) === name) return dir
-			const parent = path.dirname(dir)
-			if (parent === dir) return undefined
-			dir = parent
-		}
-	} catch {
-		// not installed, or not resolvable from here
-	}
-
 	return undefined
-}
-
-function readNameSync(dir: string): string | undefined {
-	try {
-		return JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).name
-	} catch {
-		return undefined
-	}
 }
