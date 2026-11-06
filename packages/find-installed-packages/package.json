@@ -1,6 +1,6 @@
 {
 	"name": "find-installed-packages",
-	"version": "4.0.2",
+	"version": "4.0.3",
 	"description": "Find installed packages",
 	"homepage": "https://github.com/cyberuni/find-installed-packages",
 	"bugs": {
