@@ -27,6 +27,7 @@ With the flag, npm packs each folder and installs it the way it installs a regis
 The Deno cells cannot use `file:` packages, which `deno install` skips without an error.
 They install from a throwaway registry (`registry.mjs`) that serves the fixture packages and this package, and forwards every other name to npm.
 They run a probe copied into the project that imports `find-installed-packages` by name, because Deno resolves a package's own imports from the project, not from where the file sits.
+`yarn-berry-pnp` installs this package into the project the same way (as a `file:` dependency) and runs that probe, because Yarn serves `pnpapi` only to files inside the project.
 `deno-none` leaves out `plugin-ws`: with no `node_modules`, `require.resolve` cannot reach a workspace sibling.
 
 ## What one cell checks

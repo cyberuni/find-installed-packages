@@ -39,6 +39,8 @@ for (const dir of dirs) {
 	})
 }
 
+// `/name`, `/@scope/name`, or the tarball `/name/-/name-1.2.3.tgz` under either.
+const UPSTREAM_PATH = /^\/((?:@[\w.~-]+(?:\/|%2f))?[\w.~-]+(?:\/-\/[\w.~+-]+\.tgz)?)$/i
 const OLD = '2020-01-01T00:00:00.000Z'
 const server = http.createServer(async (req, res) => {
 	const url = new URL(req.url ?? '/', 'http://127.0.0.1')
@@ -46,15 +48,22 @@ const server = http.createServer(async (req, res) => {
 	const name = decodeURIComponent((parts[0] ?? '').slice(1))
 	const pkg = packages.get(name)
 	if (!pkg) {
+		// Forward only the metadata and tarball paths an install asks for, never an arbitrary path.
+		const match = UPSTREAM_PATH.exec(url.pathname)
+		if (!match) {
+			res.writeHead(404)
+			res.end('not found')
+			return
+		}
 		try {
-			const upstream = await fetch(`https://registry.npmjs.org${url.pathname}`, {
+			const upstream = await fetch(`https://registry.npmjs.org/${match[1]}`, {
 				headers: { accept: req.headers.accept ?? 'application/json' },
 			})
 			res.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'application/json' })
 			res.end(Buffer.from(await upstream.arrayBuffer()))
-		} catch (error) {
+		} catch {
 			res.writeHead(502)
-			res.end(String(error))
+			res.end('upstream registry unavailable')
 		}
 		return
 	}

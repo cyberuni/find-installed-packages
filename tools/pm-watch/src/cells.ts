@@ -38,6 +38,12 @@ export type Cell = {
 	 */
 	registry?: boolean
 	/**
+	 * Install this package into the fixture project and run the probe from inside it, as a
+	 * consumer does. Implied by `registry`. Needed under PnP: Yarn serves `pnpapi` only to
+	 * files inside the project, so a build loaded from outside it cannot ask the PnP API.
+	 */
+	installSubject?: boolean
+	/**
 	 * What the install must have laid out for this cell to test its mode at all:
 	 * `tree` is plain package folders in `node_modules` (hoisted or nested), `isolated`
 	 * is symlinks into a store, `pnp` is no `node_modules` at all, and `global-cache` is no
@@ -102,6 +108,7 @@ export const cells: Cell[] = [
 		majors: { min: 2 },
 		install: ['install'],
 		files: { '.yarnrc.yml': 'nodeLinker: pnp\n', 'yarn.lock': '' },
+		installSubject: true,
 		env: berryEnv,
 		workspaceRange: 'workspace:*',
 		runtimes: ['yarn-node'],

@@ -32,7 +32,7 @@ export type Variant = {
  * - `plugin-e`: tagged, and its `exports` hides `./package.json` but has a `require` entry.
  * - `plugin-ws` (workspace variant only): a tagged sibling workspace.
  */
-export function writeFixture(root: string, cell: Cell, subject: { version: string }): Variant[] {
+export function writeFixture(root: string, cell: Cell, subject: { version: string; dir: string }): Variant[] {
 	const pkgs = path.join(root, 'pkgs')
 	// A registry cell installs by version range from the registry the check serves out of `pkgs`.
 	const dep = (name: string) => (cell.registry ? '^1.0.0' : `file:${path.join(pkgs, name)}`)
@@ -70,9 +70,13 @@ export function writeFixture(root: string, cell: Cell, subject: { version: strin
 	fs.writeFileSync(path.join(pkgs, 'plugin-e', 'index.js'), 'module.exports = {}\n')
 
 	const dependencies: Record<string, string> = {
-		// A registry cell runs the package as a consumer does: installed in the project.
-		// Deno resolves a package's own imports from the project, not from where the file is.
-		...(cell.registry ? { 'find-installed-packages': subject.version } : {}),
+		// These cells run the package as a consumer does: installed in the project. Deno resolves a
+		// package's own imports from the project, and Yarn serves `pnpapi` only inside it.
+		...(cell.registry
+			? { 'find-installed-packages': subject.version }
+			: cell.installSubject
+				? { 'find-installed-packages': `file:${subject.dir}` }
+				: {}),
 		'plugin-a': dep('plugin-a'),
 		'plugin-c': dep('plugin-c'),
 		'plugin-d': dep('plugin-d'),

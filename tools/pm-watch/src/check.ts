@@ -21,6 +21,7 @@ const registryScript = path.join(here, 'registry.mjs')
 const subjectDir = path.resolve(here, '../../../packages/find-installed-packages')
 const dist = path.join(subjectDir, 'dist/index.mjs')
 const subject = JSON.parse(fs.readFileSync(path.join(subjectDir, 'package.json'), 'utf8')) as { version: string }
+const subjectInfo = { version: subject.version, dir: subjectDir }
 
 const INSTALL_TIMEOUT = 5 * 60_000
 const PROBE_TIMEOUT = 60_000
@@ -74,7 +75,7 @@ async function run(cell: Cell): Promise<CellResult> {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), `fip-pm-watch-${cell.id}-`))
 	let registry: { url: string; child: ChildProcess } | undefined
 	try {
-		const variants = writeFixture(root, cell, subject)
+		const variants = writeFixture(root, cell, subjectInfo)
 		const env: Record<string, string> = { ...cell.env }
 		if (cell.registry) {
 			registry = await startRegistry([...packageFolders(root), subjectDir])
@@ -104,7 +105,7 @@ function checkVariant(cell: Cell, variant: Variant, root: string, env: Record<st
 	const checks: CheckResult[] = []
 	const v = variant.name
 
-	if (cell.registry) fs.copyFileSync(probe, path.join(variant.cwd, 'pm-watch-probe.mjs'))
+	if (installsSubject(cell)) fs.copyFileSync(probe, path.join(variant.cwd, 'pm-watch-probe.mjs'))
 	const installed = install(cell, variant, env)
 	checks.push({ variant: v, step: 'install', ...installed })
 	if (!installed.ok) return checks
@@ -184,13 +185,17 @@ function checkLayout(cell: Cell, variant: Variant): string | undefined {
 	return undefined
 }
 
+function installsSubject(cell: Cell): boolean {
+	return Boolean(cell.registry || cell.installSubject)
+}
+
 /**
- * What follows the runtime on the command line. A registry cell imports the package by name
+ * What follows the runtime on the command line. A cell that installs the package imports the package by name
  * from a probe copied into the project, so the runtime resolves it the way a consumer's does.
  * Other cells import the build by path.
  */
 function probeArgs(cell: Cell, variant: Variant): string[] {
-	return cell.registry
+	return installsSubject(cell)
 		? [path.join(variant.cwd, 'pm-watch-probe.mjs'), 'find-installed-packages', variant.cwd, KEYWORD]
 		: [probe, dist, variant.cwd, KEYWORD]
 }
