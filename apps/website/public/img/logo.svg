@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="find-installed-packages">
+  <!-- Family frame: the cyber-* command reticle. Identical in every cyber-* package. -->
+  <path class="s" d="M17 63V17h46"/>
+  <path class="s" d="M111 65v46H65"/>
+  <!-- Glyph slot (32..96): find-installed-packages finds a package — a lens over a package box. -->
+  <circle class="s" cx="58" cy="58" r="22"/>
+  <path class="s" d="M76 76 92 92"/>
+  <rect class="f" x="49" y="49" width="18" height="18" rx="3"/>
+  <style>.f{fill:#000}.s{fill:none;stroke:#000;stroke-width:10;stroke-linecap:round;stroke-linejoin:round}@media (prefers-color-scheme:dark){.f{fill:#fff}.s{stroke:#fff}}</style>
+</svg>

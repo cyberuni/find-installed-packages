@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="find-installed-packages">
+  <g fill="none" stroke="#10111a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 63V17h46"/>
+    <path d="M111 65v46H65"/>
+    <circle cx="58" cy="58" r="22"/>
+    <path d="M76 76 92 92"/>
+  </g>
+  <g fill="#10111a">
+    <rect x="49" y="49" width="18" height="18" rx="3"/>
+  </g>
+</svg>

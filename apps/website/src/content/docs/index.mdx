@@ -1,0 +1,37 @@
+---
+title: find-installed-packages
+description: Find the installed packages that declare a set of keywords, on every package manager layout.
+template: splash
+hero:
+  tagline: Find the installed packages that declare your keywords, whatever installed them.
+  actions:
+    - text: Get Started
+      link: /find-installed-packages/getting-started/introduction/
+      icon: right-arrow
+    - text: API Reference
+      link: /find-installed-packages/reference/
+      icon: open-book
+      variant: minimal
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components'
+
+`find-installed-packages` answers one question: which installed packages declare these keywords in
+their `package.json`?
+
+```ts
+import { findByKeywords } from 'find-installed-packages'
+
+const packages = await findByKeywords(['some-keyword']) // ['pkg-a', 'pkg-b']
+```
+
+It finds them by walking the declared dependency graph and asking the runtime's module resolver where
+each package lives, so the answer is the same under npm, yarn, bun, pnpm, workspaces, and Yarn
+Plug'n'Play.
+
+<CardGrid>
+	<LinkCard title="Introduction" href="/find-installed-packages/getting-started/introduction/" description="What it does, and why scanning node_modules is not enough." />
+	<LinkCard title="Installation" href="/find-installed-packages/getting-started/installation/" description="Install the package and check the runtime requirements." />
+	<LinkCard title="How packages are found" href="/find-installed-packages/guides/how-packages-are-found/" description="The dependency walk, the fallback scan, and what each one reports." />
+	<LinkCard title="Cache" href="/find-installed-packages/guides/cache/" description="Where results are cached and what invalidates them." />
+</CardGrid>
