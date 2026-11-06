@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { LOCKS } from 'package-manager-detector/constants'
+import { INSTALL_METADATA, LOCKS } from 'package-manager-detector/constants'
 
 /**
  * Yarn Plug'n'Play has no lockfile in `LOCKS`, but these change with the
@@ -18,6 +18,16 @@ const PNP_FILES = ['.pnp.cjs', '.pnp.data.json']
 const LOCKFILES = Object.keys(LOCKS).concat(PNP_FILES)
 
 /**
+ * Install-state markers, such as `node_modules/.pnpm/` or
+ * `node_modules/.package-lock.json`, also from `package-manager-detector`.
+ * An install rewrites them even when it leaves the lockfile alone.
+ *
+ * They are stamped in every folder the walk visits but do not stop it, so the
+ * lockfile found is the same with or without them.
+ */
+const INSTALL_MARKERS = Object.keys(INSTALL_METADATA).filter((name) => !LOCKFILES.includes(name))
+
+/**
  * A cheap number that changes when the installed tree changes.
  *
  * Used as the cache stamp. Unlike stat-ing every installed package, this is a
@@ -25,7 +35,8 @@ const LOCKFILES = Object.keys(LOCKS).concat(PNP_FILES)
  * than only the manifest reads.
  *
  * The lockfile is looked up from `cwd` upwards, because in a workspace it lives
- * at the repo root rather than next to the project.
+ * at the repo root rather than next to the project. The install markers are
+ * checked on the way, so a workspace member also sees the root's store.
  */
 export async function getFingerprint(cwd: string): Promise<number> {
 	const root = path.resolve(cwd)
@@ -41,8 +52,9 @@ export async function getFingerprint(cwd: string): Promise<number> {
 
 	let dir = root
 	for (;;) {
-		const stats = await Promise.all(LOCKFILES.map((name) => statSafe(path.join(dir, name))))
-		const found = stats.filter((stat): stat is fs.Stats => !!stat)
+		const [locks, markers] = await Promise.all([statAll(dir, LOCKFILES), statAll(dir, INSTALL_MARKERS)])
+		markers.forEach(bump)
+		const found = locks.filter((stat): stat is fs.Stats => !!stat)
 		if (found.length > 0) {
 			found.forEach(bump)
 			break
@@ -53,6 +65,10 @@ export async function getFingerprint(cwd: string): Promise<number> {
 	}
 
 	return fingerprint
+}
+
+function statAll(dir: string, names: string[]) {
+	return Promise.all(names.map((name) => statSafe(path.join(dir, name))))
 }
 
 async function statSafe(filepath: string) {

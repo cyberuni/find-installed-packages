@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { INSTALL_METADATA } from 'package-manager-detector/constants'
 import { getFingerprint } from './getFingerprint'
 
 const created: string[] = []
@@ -10,11 +11,16 @@ afterEach(() => {
 	while (created.length) fs.rmSync(created.pop() as string, { recursive: true, force: true })
 })
 
+/** A name ending in `/` makes a folder; any other name makes a file. */
 function makeProject(files: Record<string, string>) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fip-fingerprint-'))
 	created.push(root)
 	for (const name of Object.keys(files)) {
 		const filepath = path.join(root, name)
+		if (name.endsWith('/')) {
+			fs.mkdirSync(filepath, { recursive: true })
+			continue
+		}
 		fs.mkdirSync(path.dirname(filepath), { recursive: true })
 		fs.writeFileSync(filepath, files[name] as string)
 	}
@@ -49,6 +55,52 @@ describe('lockfiles', () => {
 		touch(path.join(root, '.pnp.cjs'), 10_000)
 
 		expect(await getFingerprint(root)).toBeGreaterThan(before)
+	})
+})
+
+describe('install markers', () => {
+	// The markers come from package-manager-detector's INSTALL_METADATA, so an
+	// install that rewrites the tree but not the lockfile is noticed.
+	for (const marker of Object.keys(INSTALL_METADATA)) {
+		test(`${marker} is part of the stamp`, async () => {
+			const root = makeProject({ 'package.json': '{}', 'pnpm-lock.yaml': '', [marker]: '' })
+
+			const before = await getFingerprint(root)
+			touch(path.join(root, marker), 10_000)
+
+			expect(await getFingerprint(root)).toBeGreaterThan(before)
+		})
+	}
+
+	test("a workspace member sees the root's store change", async () => {
+		const root = makeProject({
+			'package.json': '{}',
+			'pnpm-lock.yaml': '',
+			'node_modules/.pnpm/': '',
+			'packages/a/package.json': '{}',
+			'packages/a/node_modules/': '',
+		})
+		const project = path.join(root, 'packages', 'a')
+
+		const before = await getFingerprint(project)
+		touch(path.join(root, 'node_modules', '.pnpm'), 10_000)
+
+		expect(await getFingerprint(project)).toBeGreaterThan(before)
+	})
+
+	test('a marker does not stop the walk before the lockfile', async () => {
+		const root = makeProject({
+			'package.json': '{}',
+			'yarn.lock': '',
+			'packages/a/package.json': '{}',
+			'packages/a/node_modules/.yarn-state.yml': '',
+		})
+		const project = path.join(root, 'packages', 'a')
+
+		const before = await getFingerprint(project)
+		touch(path.join(root, 'yarn.lock'), 10_000)
+
+		expect(await getFingerprint(project)).toBeGreaterThan(before)
 	})
 })
 
