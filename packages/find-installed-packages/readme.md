@@ -11,7 +11,7 @@
 
 Find installed packages.
 
-ESM only, Node >= 20.19.
+ESM only, Node >= 20.19 or Bun >= 1.0.
 
 ## Usage
 
@@ -51,7 +51,8 @@ Two consequences worth knowing:
   a library loaded by your app). Shelling out to a plain `node` will find nothing.
   Inside it, packages are located through Yarn's `pnpapi`, so a package whose
   `exports` hide its `package.json` is found too. `pnpapi` is provided by Yarn, not
-  installed as a dependency.
+  installed as a dependency. Bun does not provide Yarn's PnP runtime, so under Bun
+  a PnP-only project resolves nothing.
 
 If `cwd` has no readable `package.json`, or one that declares no dependencies, the
 `node_modules` scan is used as a fallback.
