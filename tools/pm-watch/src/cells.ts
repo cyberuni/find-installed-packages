@@ -1,11 +1,11 @@
 /** A package manager the watch installs with. Its binary is looked up on `PATH`. */
-type Manager = 'npm' | 'pnpm' | 'yarn' | 'bun'
+type Manager = 'npm' | 'pnpm' | 'yarn' | 'bun' | 'deno'
 
 /**
  * How the built package is run against the installed fixture.
  * `yarn-node` is Node started by `yarn node`, so Yarn's PnP runtime is loaded.
  */
-export type Runtime = 'node' | 'bun' | 'yarn-node'
+export type Runtime = 'node' | 'bun' | 'deno' | 'yarn-node'
 
 /** One matrix cell: a package manager in one install mode. */
 export type Cell = {
@@ -24,17 +24,26 @@ export type Cell = {
 	files?: Record<string, string>
 	/** Extra environment for the install. */
 	env?: Record<string, string>
-	/** The `workspace:` protocol or a plain range, for depending on a sibling workspace. */
-	workspaceRange: string
+	/**
+	 * The `workspace:` protocol or a plain range, for depending on a sibling workspace.
+	 * `null` leaves the sibling out, for a mode where it cannot be resolved at all.
+	 */
+	workspaceRange: string | null
 	/** The manager reads workspaces from `pnpm-workspace.yaml` rather than `package.json`. */
 	pnpmWorkspace?: boolean
 	runtimes: Runtime[]
 	/**
+	 * Install from a throwaway local registry instead of `file:` folders. For a manager that
+	 * does not install `file:` dependencies (Deno skips them without an error).
+	 */
+	registry?: boolean
+	/**
 	 * What the install must have laid out for this cell to test its mode at all:
 	 * `tree` is plain package folders in `node_modules` (hoisted or nested), `isolated`
-	 * is symlinks into a store, `pnp` is no `node_modules` at all.
+	 * is symlinks into a store, `pnp` is no `node_modules` at all, and `global-cache` is no
+	 * `node_modules` either, with the packages served from the manager's own cache folder.
 	 */
-	layout: 'tree' | 'isolated' | 'pnp'
+	layout: 'tree' | 'isolated' | 'pnp' | 'global-cache'
 }
 
 // Yarn berry turns on immutable installs on CI, which refuses to write the fresh lockfile.
@@ -114,6 +123,31 @@ export const cells: Cell[] = [
 		install: ['install', '--linker=isolated'],
 		workspaceRange: 'workspace:*',
 		runtimes: ['node', 'bun'],
+		layout: 'isolated',
+	},
+	{
+		id: 'deno-none',
+		manager: 'deno',
+		mode: 'nodeModulesDir: none',
+		install: ['install'],
+		files: { 'deno.json': '{ "nodeModulesDir": "none" }\n' },
+		registry: true,
+		// With no `node_modules`, `require.resolve` cannot reach a workspace sibling: it is
+		// neither in `node_modules` nor in Deno's cache. Known, and not what this cell checks.
+		workspaceRange: null,
+		// Node cannot see packages that live in Deno's cache, so only Deno runs this cell.
+		runtimes: ['deno'],
+		layout: 'global-cache',
+	},
+	{
+		id: 'deno-auto',
+		manager: 'deno',
+		mode: 'nodeModulesDir: auto',
+		install: ['install'],
+		files: { 'deno.json': '{ "nodeModulesDir": "auto" }\n' },
+		registry: true,
+		workspaceRange: 'workspace:*',
+		runtimes: ['node', 'deno'],
 		layout: 'isolated',
 	},
 ]

@@ -6,18 +6,21 @@
  * The manager is whichever binary of that name is first on `PATH`; the caller fetches the
  * release to test. Exits 1 when any check fails, including an install that fails.
  */
-import { type SpawnSyncReturns, spawnSync } from 'node:child_process'
+import { type ChildProcess, type SpawnSyncReturns, spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { type Cell, cells, findCell, type Runtime } from './cells.ts'
-import { dropDependency, KEYWORD, type Variant, writeFixture } from './fixture.ts'
+import { dropDependency, KEYWORD, packageFolders, type Variant, writeFixture } from './fixture.ts'
 import { type CellResult, type CheckResult, describeFailure } from './results.ts'
 
 const here = import.meta.dirname
 const probe = path.join(here, 'probe.mjs')
-const dist = path.resolve(here, '../../../packages/find-installed-packages/dist/index.mjs')
+const registryScript = path.join(here, 'registry.mjs')
+const subjectDir = path.resolve(here, '../../../packages/find-installed-packages')
+const dist = path.join(subjectDir, 'dist/index.mjs')
+const subject = JSON.parse(fs.readFileSync(path.join(subjectDir, 'package.json'), 'utf8')) as { version: string }
 
 const INSTALL_TIMEOUT = 5 * 60_000
 const PROBE_TIMEOUT = 60_000
@@ -33,14 +36,14 @@ if (!cell) {
 	process.exit(2)
 }
 
-const result = run(cell)
+const result = await run(cell)
 const json = `${JSON.stringify(result, null, '\t')}\n`
 if (values.out) fs.writeFileSync(values.out, json)
 else process.stdout.write(json)
 printSummary(result)
 process.exit(result.ok ? 0 : 1)
 
-function run(cell: Cell): CellResult {
+async function run(cell: Cell): Promise<CellResult> {
 	const result: CellResult = {
 		cell: cell.id,
 		manager: cell.manager,
@@ -60,7 +63,8 @@ function run(cell: Cell): CellResult {
 		result.error = `\`${cell.manager} --version\` failed: ${version.error?.message ?? tail(version)}`
 		return result
 	}
-	result.version = version.stdout.trim().split('\n').pop()?.trim() ?? null
+	// Most managers print only the version. Deno prints `deno 2.9.8 (stable, ...)` and more lines after it.
+	result.version = version.stdout.match(/\d+\.\d+\.\d+\S*/)?.[0] ?? null
 	const major = Number(result.version?.split('.')[0])
 	if (cell.majors && !(major >= cell.majors.min && major <= (cell.majors.max ?? Number.POSITIVE_INFINITY))) {
 		result.error = `${cell.manager} ${result.version} on PATH is not the release line this cell tests`
@@ -68,11 +72,26 @@ function run(cell: Cell): CellResult {
 	}
 
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), `fip-pm-watch-${cell.id}-`))
+	let registry: { url: string; child: ChildProcess } | undefined
 	try {
-		for (const variant of writeFixture(root, cell)) {
-			result.checks.push(...checkVariant(cell, variant, root))
+		const variants = writeFixture(root, cell, subject)
+		const env: Record<string, string> = { ...cell.env }
+		if (cell.registry) {
+			registry = await startRegistry([...packageFolders(root), subjectDir])
+			// Deno keeps its cache in `DENO_DIR`. Inside the fixture, it starts empty and is removed with it.
+			Object.assign(env, {
+				NPM_CONFIG_REGISTRY: registry.url,
+				npm_config_registry: registry.url,
+				DENO_DIR: path.join(root, 'deno-dir'),
+			})
 		}
+		for (const variant of variants) {
+			result.checks.push(...checkVariant(cell, variant, root, env))
+		}
+	} catch (error) {
+		result.error = error instanceof Error ? error.message : String(error)
 	} finally {
+		registry?.child.kill()
 		if (values.keep) console.error(`fixture kept at ${root}`)
 		else fs.rmSync(root, { recursive: true, force: true })
 	}
@@ -81,11 +100,12 @@ function run(cell: Cell): CellResult {
 	return result
 }
 
-function checkVariant(cell: Cell, variant: Variant, root: string): CheckResult[] {
+function checkVariant(cell: Cell, variant: Variant, root: string, env: Record<string, string>): CheckResult[] {
 	const checks: CheckResult[] = []
 	const v = variant.name
 
-	const installed = install(cell, variant)
+	if (cell.registry) fs.copyFileSync(probe, path.join(variant.cwd, 'pm-watch-probe.mjs'))
+	const installed = install(cell, variant, env)
 	checks.push({ variant: v, step: 'install', ...installed })
 	if (!installed.ok) return checks
 
@@ -100,24 +120,24 @@ function checkVariant(cell: Cell, variant: Variant, root: string): CheckResult[]
 		fs.mkdirSync(tmpdir, { recursive: true })
 		tmpdirs.set(runtime, tmpdir)
 		for (const step of ['first', 'cached']) {
-			checks.push({ variant: v, step, ...probeRuntime(runtime, variant, tmpdir, variant.expected) })
+			checks.push({ variant: v, step, ...probeRuntime(cell, runtime, variant, tmpdir, variant.expected, env) })
 		}
 	}
 
 	const expected = dropDependency(variant)
-	const reinstalled = install(cell, variant)
+	const reinstalled = install(cell, variant, env)
 	if (!reinstalled.ok) {
 		checks.push({ variant: v, step: 'reinstall', ...reinstalled })
 		return checks
 	}
 	for (const [runtime, tmpdir] of tmpdirs) {
-		checks.push({ variant: v, step: 'reinstall', ...probeRuntime(runtime, variant, tmpdir, expected) })
+		checks.push({ variant: v, step: 'reinstall', ...probeRuntime(cell, runtime, variant, tmpdir, expected, env) })
 	}
 	return checks
 }
 
-function install(cell: Cell, variant: Variant): { ok: boolean; error?: string } {
-	const out = exec(cell.manager, cell.install, variant.installRoot, cell.env, INSTALL_TIMEOUT)
+function install(cell: Cell, variant: Variant, env: Record<string, string>): { ok: boolean; error?: string } {
+	const out = exec(cell.manager, cell.install, variant.installRoot, env, INSTALL_TIMEOUT)
 	if (out.error)
 		return { ok: false, error: `\`${cell.manager} ${cell.install.join(' ')}\` failed: ${out.error.message}` }
 	if (out.status !== 0) {
@@ -136,6 +156,11 @@ function checkLayout(cell: Cell, variant: Variant): string | undefined {
 		[variant.cwd, variant.installRoot].map((dir) => path.join(dir, 'node_modules', name)).find((p) => fs.existsSync(p))
 	const a = top('plugin-a')
 	const b = top('plugin-b')
+
+	if (cell.layout === 'global-cache') {
+		const found = [variant.cwd, variant.installRoot].find((dir) => fs.existsSync(path.join(dir, 'node_modules')))
+		return found ? `expected no node_modules, but ${found} has one` : undefined
+	}
 
 	if (cell.layout === 'pnp') {
 		if (fs.existsSync(path.join(variant.installRoot, 'node_modules'))) return 'expected no node_modules under PnP'
@@ -159,21 +184,29 @@ function checkLayout(cell: Cell, variant: Variant): string | undefined {
 	return undefined
 }
 
+/**
+ * What follows the runtime on the command line. A registry cell imports the package by name
+ * from a probe copied into the project, so the runtime resolves it the way a consumer's does.
+ * Other cells import the build by path.
+ */
+function probeArgs(cell: Cell, variant: Variant): string[] {
+	return cell.registry
+		? [path.join(variant.cwd, 'pm-watch-probe.mjs'), 'find-installed-packages', variant.cwd, KEYWORD]
+		: [probe, dist, variant.cwd, KEYWORD]
+}
+
 function probeRuntime(
+	cell: Cell,
 	runtime: Runtime,
 	variant: Variant,
 	tmpdir: string,
 	expected: string[],
+	cellEnv: Record<string, string>,
 ): Omit<CheckResult, 'variant' | 'step'> {
-	const [command, ...prefix] = runtime === 'yarn-node' ? ['yarn', 'node'] : [runtime]
-	const env = { TMPDIR: tmpdir, TEMP: tmpdir, TMP: tmpdir }
-	const out = exec(
-		command as string,
-		[...prefix, probe, dist, variant.cwd, KEYWORD],
-		variant.installRoot,
-		env,
-		PROBE_TIMEOUT,
-	)
+	const [command, ...prefix] =
+		runtime === 'yarn-node' ? ['yarn', 'node'] : runtime === 'deno' ? ['deno', 'run', '-A'] : [runtime]
+	const env = { ...cellEnv, TMPDIR: tmpdir, TEMP: tmpdir, TMP: tmpdir }
+	const out = exec(command as string, [...prefix, ...probeArgs(cell, variant)], variant.installRoot, env, PROBE_TIMEOUT)
 	if (out.error || out.status !== 0) {
 		return { runtime, ok: false, expected, error: `probe failed: ${out.error?.message ?? tail(out)}` }
 	}
@@ -193,6 +226,34 @@ function probeRuntime(
 	const actual = [...parsed.packages].sort()
 	const ok = actual.length === expected.length && actual.every((name, i) => name === expected[i])
 	return { runtime: parsed.runtime, ok, expected, actual }
+}
+
+/** Start `registry.mjs` on a free port and wait for it to print its URL. */
+function startRegistry(folders: string[]): Promise<{ url: string; child: ChildProcess }> {
+	return new Promise((resolve, reject) => {
+		const child = spawn(process.execPath, [registryScript, ...folders], { env: childEnv({}) })
+		let stdout = ''
+		let stderr = ''
+		const timer = setTimeout(() => {
+			child.kill()
+			reject(new Error(`the local registry did not start in 60s: ${stderr.trim()}`))
+		}, 60_000)
+		child.stderr.on('data', (data) => {
+			stderr += data
+		})
+		child.stdout.on('data', (data) => {
+			stdout += data
+			const url = stdout.split('\n')[0]
+			if (stdout.includes('\n') && url) {
+				clearTimeout(timer)
+				resolve({ url, child })
+			}
+		})
+		child.on('exit', (code) => {
+			clearTimeout(timer)
+			reject(new Error(`the local registry exited ${code}: ${stderr.trim()}`))
+		})
+	})
 }
 
 function exec(

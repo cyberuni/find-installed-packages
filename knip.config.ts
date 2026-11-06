@@ -10,8 +10,8 @@ const config: KnipConfig = {
 			ignoreDependencies: ['package-manager-detector'],
 		},
 		'tools/pm-watch': {
-			// Run by path under each runtime being checked, never imported.
-			entry: ['src/probe.mjs'],
+			// Run by path, never imported: the probe under each runtime being checked, the registry as a child process.
+			entry: ['src/probe.mjs', 'src/registry.mjs'],
 		},
 	},
 }

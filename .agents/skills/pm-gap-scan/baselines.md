@@ -65,3 +65,24 @@ Cache coverage seen in `created`: every manager above wrote a lockfile the finge
 install-state files inside `node_modules` (`.package-lock.json`, `.modules.yaml`, `.yarn-state.yml`,
 `.bun`, `.store`, `.package-map.json`), `.yarn/`, and `.pnp.loader.mjs`, each of which changes together
 with a watched file.
+
+## Fix check 2026-11-06: Deno `nodeModulesDir: "none"` (G2)
+
+Package: `find-installed-packages` 4.0.2 built from the G2 fix branch (base `f158177`). Runtimes: Deno
+2.9.8 (stable) with its Node compat layer, and Node 26.7.0 for the `node_modules` cell. Probe:
+`tools/pm-watch` cells `deno-none` and `deno-auto`, which install from a local registry (Deno skips
+`file:` dependencies) and run a probe inside the project that imports `find-installed-packages` by
+name. Each checks a standalone and a workspace project, cold, cached, and after a reinstall.
+
+Fixture packages: a direct keyword package, a transitive one, an `exports`-hidden one with no
+`require` entry, and an `exports`-hidden one with a `require` entry.
+
+| Cell | Version | Without the fix | With the fix | Runtimes |
+| --- | --- | --- | --- | --- |
+| `deno-none` | 2.9.8 | **fail**: both `exports`-hidden packages missing | pass | Deno |
+| `deno-auto` | 2.9.8 | pass | pass | Node, Deno |
+
+Seen on the way: with `nodeModulesDir: "none"`, a sibling workspace package named by a `workspace:*`
+dependency is not found from a workspace member. `require.resolve.paths` lists no folder for it, and
+nothing in `node_modules` or Deno's cache holds it. `deno-none` leaves the sibling out. `deno-auto`
+finds it.

@@ -46,6 +46,9 @@ jobs:
           # Bun comes from setup-bun below, which every cell needs to build the package.
           - cell: bun-hoisted
           - cell: bun-isolated
+          # Deno comes from setup-deno below. Both cells install through a local registry.
+          - cell: deno-none
+          - cell: deno-auto
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -54,6 +57,10 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: lts/*
+      - uses: denoland/setup-deno@v2
+        if: startsWith(matrix.cell, 'deno-')
+        with:
+          deno-version: latest
       - run: bun install --frozen-lockfile
       - run: bun run --filter find-installed-packages build
       - name: Fetch the latest release
