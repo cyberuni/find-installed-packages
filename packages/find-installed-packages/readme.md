@@ -11,6 +11,8 @@
 
 Find installed packages.
 
+Documentation: <https://cyberuni.github.io/find-installed-packages/>
+
 ESM only, Node >= 20.19 or Bun >= 1.0.
 
 ## Usage

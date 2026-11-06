@@ -2,10 +2,11 @@
 	"name": "find-installed-packages-monorepo",
 	"private": true,
 	"workspaces": [
+		"apps/*",
 		"packages/*"
 	],
 	"scripts": {
-		"build": "bun run --filter './packages/*' build",
+		"build": "bun run --filter './packages/*' --filter './apps/*' build",
 		"changeset": "changeset",
 		"clean": "bun run --filter './packages/*' clean",
 		"coverage": "bun run --filter './packages/*' coverage",
@@ -18,8 +19,10 @@
 		"version": "changeset version",
 		"test": "bun run --filter './packages/*' test",
 		"typecheck": "tsc -p tsconfig.json && bun run --filter './packages/*' typecheck",
-		"verify": "npm-run-all clean -p knip typecheck build check coverage",
-		"watch": "bun run --filter './packages/*' watch"
+		"typecheck:web": "bun run --filter website typecheck",
+		"verify": "npm-run-all clean -p knip typecheck build check coverage -s typecheck:web",
+		"watch": "bun run --filter './packages/*' watch",
+		"web": "bun run --filter website"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.11",
