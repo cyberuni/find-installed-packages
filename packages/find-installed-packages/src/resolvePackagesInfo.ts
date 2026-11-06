@@ -113,7 +113,9 @@ function resolvePackageDir(name: string, fromDir: string, pnp: PnpApi | undefine
 		if (lookups) {
 			for (const lookup of lookups) {
 				const candidate = path.join(lookup, name)
-				if (fs.existsSync(path.join(candidate, 'package.json'))) return candidate
+				// The real folder, as strategy 1 returns. In an isolated store `candidate` is a
+				// symlink, and the package's own dependencies are found only from its store folder.
+				if (fs.existsSync(path.join(candidate, 'package.json'))) return fs.realpathSync(candidate)
 			}
 		}
 	} catch {

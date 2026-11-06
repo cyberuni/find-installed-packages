@@ -39,3 +39,51 @@ describe('exports-restricted package in a node_modules tree', () => {
 		assert.deepEqual(await findByKeywords(['some-keyword'], { cwd: root }), ['plugin-e'])
 	})
 })
+
+describe('exports-restricted package in an isolated store (pnpm)', () => {
+	// Built at runtime rather than committed: symlinks do not survive a checkout on
+	// Windows without developer mode.
+	let root
+
+	before(() => {
+		root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fip-node-isolated-')))
+		const store = path.join(root, 'node_modules', '.store')
+		const hidden = { exports: { '.': './index.js' } }
+
+		write(path.join(root, 'package.json'), {
+			name: 'testcase-isolated',
+			private: true,
+			dependencies: { 'plugin-a': '*' },
+		})
+
+		// Both packages hide `./package.json`, so the lookup paths are what find them.
+		const pluginA = path.join(store, 'plugin-a@1.0.0', 'node_modules', 'plugin-a')
+		write(path.join(pluginA, 'package.json'), {
+			name: 'plugin-a',
+			keywords: ['some-keyword'],
+			dependencies: { 'plugin-b': '*' },
+			...hidden,
+		})
+		const pluginB = path.join(store, 'plugin-b@1.0.0', 'node_modules', 'plugin-b')
+		write(path.join(pluginB, 'package.json'), { name: 'plugin-b', keywords: ['some-keyword'], ...hidden })
+
+		// plugin-b is reachable only through plugin-a's store folder, not through its
+		// top-level link.
+		fs.symlinkSync(pluginA, path.join(root, 'node_modules', 'plugin-a'), 'dir')
+		fs.symlinkSync(pluginB, path.join(store, 'plugin-a@1.0.0', 'node_modules', 'plugin-b'), 'dir')
+	})
+
+	after(() => {
+		fs.rmSync(root, { recursive: true, force: true })
+	})
+
+	test('reaches its transitive dependency through the store', async () => {
+		assert.deepEqual((await findByKeywords(['some-keyword'], { cwd: root })).sort(), ['plugin-a', 'plugin-b'])
+	})
+})
+
+function write(file, json) {
+	fs.mkdirSync(path.dirname(file), { recursive: true })
+	fs.writeFileSync(file, JSON.stringify(json))
+	if (path.basename(file) === 'package.json') fs.writeFileSync(path.join(path.dirname(file), 'index.js'), '')
+}
