@@ -1,5 +1,18 @@
 # find-installed-packages
 
+## 4.0.3
+
+### Patch Changes
+
+- 26b2b7d: Document Bun support (`Bun >= 1.0`) and note that Yarn PnP projects resolve nothing under Bun.
+- 94652ad: The cache stamp now also watches install markers, such as `node_modules/.pnpm/` and `node_modules/.package-lock.json`, whose names come from `package-manager-detector`'s `INSTALL_METADATA`. An install that changes the installed packages without changing the lockfile, such as `npm install --no-save`, now invalidates cached results. From a workspace member, the markers at the repository root count too, so a change to the root's store is noticed.
+- bff5095: Under Deno with `nodeModulesDir: "none"`, a package whose `exports` hide its `package.json` is found again. Deno's resolver lists the package's own cache folder as the lookup instead of a `node_modules` folder above it, and the lookup is now accepted when its `package.json` names the package. This had stopped working when the "resolve the entry point and walk up" lookup was removed.
+- 353554c: Under Node, a package whose `exports` hide its `package.json` is now followed into its own dependencies in a pnpm-style isolated store. Previously the lookup returned the symlink in `node_modules` rather than the store folder, so that package's dependencies were not found.
+  
+  The resolver no longer tries a third "resolve the entry point and walk up" lookup. No supported layout needed it.
+  
+  `dist/` now ships source maps (`dist/index.mjs.map`) next to the build.
+
 ## 4.0.2
 
 ### Patch Changes
