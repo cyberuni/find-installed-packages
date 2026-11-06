@@ -84,6 +84,66 @@ describe('layouts the node_modules walk could not reach', () => {
 			expect(resolved?.map((pkg) => pkg.name).sort()).toEqual(['plugin-a', 'plugin-b'])
 		})
 	})
+
+	describe('real `bun install --linker=isolated`', () => {
+		// The store above is hand-built. This one is laid out by bun itself, so a change
+		// in bun's store shape shows up here. Every dependency is a local `file:` package,
+		// and the registry points at a closed port, so the install never goes online.
+		let root: string
+
+		beforeAll(() => {
+			root = fs.mkdtempSync(path.join(os.tmpdir(), 'fip-bun-isolated-'))
+
+			write(path.join(root, 'package.json'), {
+				name: 'testcase-bun-isolated',
+				version: '0.0.0',
+				private: true,
+				dependencies: { 'plugin-a': 'file:./pkgs/plugin-a', 'plugin-c': 'file:./pkgs/plugin-c' },
+			})
+			write(path.join(root, 'pkgs', 'plugin-a', 'package.json'), {
+				name: 'plugin-a',
+				version: '1.0.0',
+				keywords: ['some-keyword'],
+				dependencies: { 'plugin-b': 'file:../plugin-b' },
+			})
+			write(path.join(root, 'pkgs', 'plugin-b', 'package.json'), {
+				name: 'plugin-b',
+				version: '1.0.0',
+				keywords: ['some-keyword'],
+			})
+			write(path.join(root, 'pkgs', 'plugin-c', 'package.json'), { name: 'plugin-c', version: '1.0.0' })
+
+			// The repo's release soak is repeated here to show it does not apply to `file:` deps.
+			fs.writeFileSync(
+				path.join(root, 'bunfig.toml'),
+				'[install]\nregistry = "http://127.0.0.1:9/"\nminimumReleaseAge = 86400\n',
+			)
+
+			const install = Bun.spawnSync([process.execPath, 'install', '--linker=isolated'], {
+				cwd: root,
+				stdout: 'pipe',
+				stderr: 'pipe',
+			})
+			if (install.exitCode !== 0) {
+				throw new Error(`bun install --linker=isolated failed:\n${install.stderr.toString()}`)
+			}
+		})
+
+		afterAll(() => {
+			fs.rmSync(root, { recursive: true, force: true })
+		})
+
+		test('the transitive dependency is reachable only through the store', () => {
+			// Guards the premise: if bun ever hoists plugin-b, this test no longer covers the store.
+			expect(fs.existsSync(path.join(root, 'node_modules', 'plugin-b'))).toBe(false)
+		})
+
+		test('finds direct and transitive keyword packages', async () => {
+			const actual = await findByKeywords(['some-keyword'], { cwd: root })
+
+			expect(actual.sort()).toEqual(['plugin-a', 'plugin-b'])
+		})
+	})
 })
 
 describe('Yarn PnP', () => {
