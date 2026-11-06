@@ -49,6 +49,9 @@ Two consequences worth knowing:
   that nothing depends on is not returned.
 - Under Yarn PnP this must run inside the PnP-enabled process (the normal case for
   a library loaded by your app). Shelling out to a plain `node` will find nothing.
+  Inside it, packages are located through Yarn's `pnpapi`, so a package whose
+  `exports` hide its `package.json` is found too. `pnpapi` is provided by Yarn, not
+  installed as a dependency.
 
 If `cwd` has no readable `package.json`, or one that declares no dependencies, the
 `node_modules` scan is used as a fallback.

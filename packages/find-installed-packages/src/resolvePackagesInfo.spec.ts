@@ -4,6 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { findByKeywords } from '.'
 import { clearCache } from './cachePackages'
+import { getPnpApi } from './getPnpApi'
 import { resolvePackagesInfo } from './resolvePackagesInfo'
 
 beforeAll(() => {
@@ -82,6 +83,88 @@ describe('layouts the node_modules walk could not reach', () => {
 
 			expect(resolved?.map((pkg) => pkg.name).sort()).toEqual(['plugin-a', 'plugin-b'])
 		})
+	})
+})
+
+describe('Yarn PnP', () => {
+	// There is no `node_modules` anywhere in this tree, as under PnP: the packages sit
+	// in their own folders (standing in for `.yarn/cache/*.zip/node_modules/<name>`), and
+	// only the stubbed PnP API knows where each one is. A real Yarn install is verified
+	// by hand; CI cannot run one without fetching Yarn and an install over the network.
+	let root: string
+	let pnp: { resolveToUnqualified(request: string, issuer: string): string | null }
+
+	beforeAll(() => {
+		root = fs.mkdtempSync(path.join(os.tmpdir(), 'fip-pnp-'))
+		const cache = path.join(root, '.yarn', 'cache')
+		const dirOf = (name: string) => path.join(cache, `${name}.zip`, 'node_modules', name)
+
+		write(path.join(root, 'package.json'), {
+			name: 'testcase-pnp',
+			version: '0.0.0',
+			private: true,
+			dependencies: { 'plugin-a': '*', 'plugin-hidden': '*' },
+		})
+		write(path.join(dirOf('plugin-a'), 'package.json'), {
+			name: 'plugin-a',
+			version: '1.0.0',
+			keywords: ['some-keyword'],
+			dependencies: { 'plugin-shared': '*' },
+		})
+		// `exports` hides both `./package.json` and any `require` entry. Under
+		// `node_modules` the resolver's lookup paths still find it; under PnP they do not exist.
+		write(path.join(dirOf('plugin-hidden'), 'package.json'), {
+			name: 'plugin-hidden',
+			version: '1.0.0',
+			keywords: ['some-keyword'],
+			exports: { './sub': './sub.js' },
+			dependencies: { 'plugin-shared': '*' },
+		})
+		// Reached through two dependents; reported once.
+		write(path.join(dirOf('plugin-shared'), 'package.json'), {
+			name: 'plugin-shared',
+			version: '1.0.0',
+			keywords: ['some-keyword'],
+		})
+
+		// Each issuer sees only what it declares, as under PnP.
+		const graph: Record<string, Record<string, string>> = {
+			[root]: { 'plugin-a': dirOf('plugin-a'), 'plugin-hidden': dirOf('plugin-hidden') },
+			[dirOf('plugin-a')]: { 'plugin-shared': dirOf('plugin-shared') },
+			[dirOf('plugin-hidden')]: { 'plugin-shared': dirOf('plugin-shared') },
+		}
+		pnp = {
+			resolveToUnqualified(request, issuer) {
+				const dir = graph[path.dirname(issuer)]?.[request]
+				if (!dir) throw new Error(`${request} is not a dependency of ${issuer}`)
+				return dir
+			},
+		}
+	})
+
+	afterAll(() => {
+		fs.rmSync(root, { recursive: true, force: true })
+	})
+
+	test('finds every declared package through the PnP API, each once', async () => {
+		const resolved = await resolvePackagesInfo(root, pnp)
+
+		expect(resolved?.map((pkg) => pkg.name).sort()).toEqual(['plugin-a', 'plugin-hidden', 'plugin-shared'])
+	})
+
+	test('reports the folder the PnP API names', async () => {
+		const resolved = await resolvePackagesInfo(root, pnp)
+		const hidden = resolved?.find((pkg) => pkg.name === 'plugin-hidden')
+
+		expect(hidden?.path).toBe(path.join(root, '.yarn', 'cache', 'plugin-hidden.zip', 'node_modules', 'plugin-hidden'))
+		expect(hidden?.manifest.keywords).toEqual(['some-keyword'])
+	})
+})
+
+describe('getPnpApi', () => {
+	test('is undefined outside Yarn PnP', () => {
+		expect(process.versions['pnp']).toBeUndefined()
+		expect(getPnpApi()).toBeUndefined()
 	})
 })
 
