@@ -74,7 +74,8 @@ async function walk(
  * Note on coverage: Bun's resolver serves `<pkg>/package.json` even when `exports`
  * does not list it, so strategy 1 always wins under `bun test` and strategy 2 reports
  * as uncovered there. It is not dead code: under Node it is what finds an
- * `exports`-restricted package in a `node_modules` tree.
+ * `exports`-restricted package in a `node_modules` tree. `node-test/` runs it against
+ * the build under Node, and that run's coverage is uploaded alongside Bun's.
  *
  * There is no third "resolve the entry point and walk up" strategy. `require.resolve`
  * searches exactly the folders `require.resolve.paths()` lists, so in a `node_modules`
