@@ -1,0 +1,125 @@
+# Installs a fixture with each package manager's latest release, runs the built package
+# against it, and opens one issue when any cell fails. See tools/pm-watch/README.md.
+name: pm-latest-watch
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Print the issue body without creating an issue
+        type: boolean
+        default: false
+  # Exercises the watch on pull requests that change it. Never opens an issue, and is
+  # not a required check: a manager release can turn it red without the PR being wrong.
+  pull_request:
+    paths:
+      - tools/pm-watch/**
+      - .github/workflows/pm-latest-watch.yml
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: pm-latest-watch-${{ github.event_name == 'pull_request' && github.head_ref || 'watch' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: check (${{ matrix.cell }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cell: npm
+            fetch: npm install --global npm@latest
+          - cell: pnpm
+            fetch: npm install --global pnpm@latest
+          - cell: yarn-classic
+            fetch: npm install --global yarn@latest
+          - cell: yarn-berry-node-modules
+            fetch: npm install --global @yarnpkg/cli-dist@latest
+          - cell: yarn-berry-pnp
+            fetch: npm install --global @yarnpkg/cli-dist@latest
+          # Bun comes from setup-bun below, which every cell needs to build the package.
+          - cell: bun-hoisted
+          - cell: bun-isolated
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+      - run: bun install --frozen-lockfile
+      - run: bun run --filter find-installed-packages build
+      - name: Fetch the latest release
+        if: matrix.fetch
+        run: ${{ matrix.fetch }}
+      - name: Check ${{ matrix.cell }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/pm-watch"
+          node tools/pm-watch/src/check.ts '${{ matrix.cell }}' --out "$RUNNER_TEMP/pm-watch/${{ matrix.cell }}.json"
+      # Uploaded even when the check fails. A cell that never got this far has no
+      # result file, and the report counts that as a failure.
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: pm-watch-${{ matrix.cell }}
+          path: ${{ runner.temp }}/pm-watch/${{ matrix.cell }}.json
+          if-no-files-found: ignore
+
+  report:
+    needs: check
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      TITLE: 'chore: package manager latest-release check failed'
+      # Only the schedule, or a dispatch without dry_run, opens an issue.
+      OPEN_ISSUE: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == false) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+      - run: mkdir -p "$RUNNER_TEMP/results"
+      - uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          pattern: pm-watch-*
+          path: ${{ runner.temp }}/results
+      - name: Build the report
+        id: report
+        run: |
+          set +e
+          node tools/pm-watch/src/report.ts "$RUNNER_TEMP/results" > "$RUNNER_TEMP/issue-body.md"
+          code=$?
+          set -e
+          # A crash also exits non-zero; only a finished report ends with this line.
+          grep -q 'Produced by `tools/pm-watch`' "$RUNNER_TEMP/issue-body.md"
+          cat "$RUNNER_TEMP/issue-body.md" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" -eq 0 ]; then echo "failed=false" >> "$GITHUB_OUTPUT"; else echo "failed=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Print issue body (dry run)
+        if: steps.report.outputs.failed == 'true' && env.OPEN_ISSUE != 'true'
+        run: |
+          echo "Would open: $TITLE"
+          cat "$RUNNER_TEMP/issue-body.md"
+      - name: Open issue
+        if: steps.report.outputs.failed == 'true' && env.OPEN_ISSUE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create pm-watch --color 0E8A16 --description "Package manager latest-release watch" 2>/dev/null || true
+          gh label create maintenance --color C5DEF5 --description "Routine maintenance" 2>/dev/null || true
+          if gh issue list --label pm-watch --state open --json title --jq '.[].title' | grep -Fxq "$TITLE"; then
+            echo "Open issue already exists; skipping"
+            exit 0
+          fi
+          gh issue create --title "$TITLE" --label pm-watch --label maintenance --body-file "$RUNNER_TEMP/issue-body.md"
+      # Keep the run red while a cell fails, whether or not an issue was opened.
+      - name: Fail on failing cells
+        if: steps.report.outputs.failed == 'true'
+        run: exit 1
