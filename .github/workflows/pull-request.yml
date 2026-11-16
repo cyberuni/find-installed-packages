@@ -6,7 +6,7 @@ on:
 
 jobs:
   code:
-    uses: cyberuni/.github/.github/workflows/bun-verify.yml@v2
+    uses: repobuddy/.github/.github/workflows/bun-verify.yml@v2
     with:
       os: '["ubuntu-latest"]'
       skip-playwright: true
